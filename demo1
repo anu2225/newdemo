@@ -1,1 +1,253 @@
 Anurag Sanjay Jadhva
+package com.smartHotelBooking.smartHotelBooking.controller;
+
+import com.smartHotelBooking.smartHotelBooking.dto.requestdto.HotelRequestDTO;
+import com.smartHotelBooking.smartHotelBooking.dto.responsedto.HotelResponseDTO;
+import com.smartHotelBooking.smartHotelBooking.entity.Hotel;
+import com.smartHotelBooking.smartHotelBooking.repository.HotelRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/hotels")
+public class HotelController {
+
+    @Autowired
+    private HotelRepository hotelRepository;
+
+    // ✅ Create Hotel
+    @PostMapping
+    public ResponseEntity<HotelResponseDTO> createHotel(@RequestBody HotelRequestDTO hotelRequestDTO) {
+        Hotel hotel = new Hotel();
+        hotel.setName(hotelRequestDTO.getName());
+        hotel.setLocation(hotelRequestDTO.getLocation());
+        hotel.setManagerId(hotelRequestDTO.getManagerId());
+        hotel.setAmenities(hotelRequestDTO.getAmenities());
+        hotel.setRating(hotelRequestDTO.getRating());
+
+        Hotel savedHotel = hotelRepository.save(hotel);
+
+        HotelResponseDTO responseDTO = new HotelResponseDTO(savedHotel.getHotelId(),
+                savedHotel.getName(), savedHotel.getLocation(), savedHotel.getManagerId(),
+                savedHotel.getAmenities(), savedHotel.getRating());
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    // ✅ Get all Hotels
+    @GetMapping
+    public ResponseEntity<List<HotelResponseDTO>> getAllHotels() {
+        List<HotelResponseDTO> hotels = hotelRepository.findAll().stream()
+                .map(h -> new HotelResponseDTO(h.getHotelId(), h.getName(), h.getLocation(),
+                        h.getManagerId(), h.getAmenities(), h.getRating()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(hotels);
+    }
+
+    // ✅ Get Hotel by Id
+    @GetMapping("/{id}")
+    public ResponseEntity<HotelResponseDTO> getHotelById(@PathVariable Long id) {
+        Optional<Hotel> hotel = hotelRepository.findById(id);
+        if (hotel.isPresent()) {
+            Hotel h = hotel.get();
+            HotelResponseDTO dto = new HotelResponseDTO(h.getHotelId(), h.getName(), h.getLocation(),
+                    h.getManagerId(), h.getAmenities(), h.getRating());
+            return ResponseEntity.ok(dto);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // ✅ Update Hotel
+    @PutMapping("/{id}")
+    public ResponseEntity<HotelResponseDTO> updateHotel(@PathVariable Long id,
+                                                        @RequestBody HotelRequestDTO hotelRequestDTO) {
+        Optional<Hotel> existing = hotelRepository.findById(id);
+        if (existing.isPresent()) {
+            Hotel hotel = existing.get();
+            hotel.setName(hotelRequestDTO.getName());
+            hotel.setLocation(hotelRequestDTO.getLocation());
+            hotel.setManagerId(hotelRequestDTO.getManagerId());
+            hotel.setAmenities(hotelRequestDTO.getAmenities());
+            hotel.setRating(hotelRequestDTO.getRating());
+
+            Hotel updated = hotelRepository.save(hotel);
+            HotelResponseDTO responseDTO = new HotelResponseDTO(updated.getHotelId(),
+                    updated.getName(), updated.getLocation(), updated.getManagerId(),
+                    updated.getAmenities(), updated.getRating());
+            return ResponseEntity.ok(responseDTO);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // ✅ Delete Hotel
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteHotel(@PathVariable Long id) {
+        if (hotelRepository.existsById(id)) {
+            hotelRepository.deleteById(id);
+            return ResponseEntity.ok("Hotel deleted successfully!");
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // ✅ Search by Location
+    @GetMapping("/search")
+    public ResponseEntity<List<HotelResponseDTO>> searchByLocation(@RequestParam String location) {
+        List<Hotel> hotels = hotelRepository.findByLocation(location);
+        List<HotelResponseDTO> result = hotels.stream()
+                .map(h -> new HotelResponseDTO(h.getHotelId(), h.getName(), h.getLocation(),
+                        h.getManagerId(), h.getAmenities(), h.getRating()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    // ✅ Filter by Rating
+    @GetMapping("/filter")
+    public ResponseEntity<List<HotelResponseDTO>> filterByRating(@RequestParam Double rating) {
+        List<Hotel> hotels = hotelRepository.findByRatingGreaterThan(rating);
+        List<HotelResponseDTO> result = hotels.stream()
+                .map(h -> new HotelResponseDTO(h.getHotelId(), h.getName(), h.getLocation(),
+                        h.getManagerId(), h.getAmenities(), h.getRating()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+}
+
+
+
+
+
+package com.smartHotelBooking.smartHotelBooking.controller;
+
+import com.smartHotelBooking.smartHotelBooking.dto.requestdto.RoomRequestDTO;
+import com.smartHotelBooking.smartHotelBooking.dto.responsedto.RoomResponseDTO;
+import com.smartHotelBooking.smartHotelBooking.entity.Room;
+import com.smartHotelBooking.smartHotelBooking.repository.RoomRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/rooms")
+public class RoomController {
+
+    @Autowired
+    private RoomRepository roomRepository;
+
+    // ✅ Add Room
+    @PostMapping
+    public ResponseEntity<RoomResponseDTO> createRoom(@RequestBody RoomRequestDTO roomRequestDTO) {
+        Room room = new Room();
+        room.setType(roomRequestDTO.getType());
+        room.setPrice(roomRequestDTO.getPrice());
+        room.setAvailability(roomRequestDTO.getAvailability());
+        room.setFeatures(roomRequestDTO.getFeatures());
+        room.setHotelId(roomRequestDTO.getHotelId());
+
+        Room savedRoom = roomRepository.save(room);
+
+        RoomResponseDTO responseDTO = new RoomResponseDTO(savedRoom.getRoomId(), savedRoom.getType(),
+                savedRoom.getPrice(), savedRoom.getAvailability(), savedRoom.getFeatures(),
+                savedRoom.getHotelId());
+
+        return ResponseEntity.ok(responseDTO);
+    }
+
+    // ✅ Get all Rooms
+    @GetMapping
+    public ResponseEntity<List<RoomResponseDTO>> getAllRooms() {
+        List<RoomResponseDTO> rooms = roomRepository.findAll().stream()
+                .map(r -> new RoomResponseDTO(r.getRoomId(), r.getType(), r.getPrice(),
+                        r.getAvailability(), r.getFeatures(), r.getHotelId()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(rooms);
+    }
+
+    // ✅ Get Room by Id
+    @GetMapping("/{id}")
+    public ResponseEntity<RoomResponseDTO> getRoomById(@PathVariable Long id) {
+        Optional<Room> room = roomRepository.findById(id);
+        if (room.isPresent()) {
+            Room r = room.get();
+            RoomResponseDTO dto = new RoomResponseDTO(r.getRoomId(), r.getType(), r.getPrice(),
+                    r.getAvailability(), r.getFeatures(), r.getHotelId());
+            return ResponseEntity.ok(dto);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // ✅ Update Room
+    @PutMapping("/{id}")
+    public ResponseEntity<RoomResponseDTO> updateRoom(@PathVariable Long id,
+                                                      @RequestBody RoomRequestDTO roomRequestDTO) {
+        Optional<Room> existing = roomRepository.findById(id);
+        if (existing.isPresent()) {
+            Room room = existing.get();
+            room.setType(roomRequestDTO.getType());
+            room.setPrice(roomRequestDTO.getPrice());
+            room.setAvailability(roomRequestDTO.getAvailability());
+            room.setFeatures(roomRequestDTO.getFeatures());
+            room.setHotelId(roomRequestDTO.getHotelId());
+
+            Room updated = roomRepository.save(room);
+            RoomResponseDTO responseDTO = new RoomResponseDTO(updated.getRoomId(), updated.getType(),
+                    updated.getPrice(), updated.getAvailability(), updated.getFeatures(),
+                    updated.getHotelId());
+            return ResponseEntity.ok(responseDTO);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // ✅ Delete Room
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteRoom(@PathVariable Long id) {
+        if (roomRepository.existsById(id)) {
+            roomRepository.deleteById(id);
+            return ResponseEntity.ok("Room deleted successfully!");
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    // ✅ Get Rooms by Hotel Id
+    @GetMapping("/hotel/{hotelId}")
+    public ResponseEntity<List<RoomResponseDTO>> getRoomsByHotel(@PathVariable Long hotelId) {
+        List<Room> rooms = roomRepository.findByHotelId(hotelId);
+        List<RoomResponseDTO> result = rooms.stream()
+                .map(r -> new RoomResponseDTO(r.getRoomId(), r.getType(), r.getPrice(),
+                        r.getAvailability(), r.getFeatures(), r.getHotelId()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    // ✅ Filter Rooms by Price Range
+    @GetMapping("/filter")
+    public ResponseEntity<List<RoomResponseDTO>> filterByPrice(@RequestParam Double minPrice,
+                                                               @RequestParam Double maxPrice) {
+        List<Room> rooms = roomRepository.findByPriceBetween(minPrice, maxPrice);
+        List<RoomResponseDTO> result = rooms.stream()
+                .map(r -> new RoomResponseDTO(r.getRoomId(), r.getType(), r.getPrice(),
+                        r.getAvailability(), r.getFeatures(), r.getHotelId()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    // ✅ Get Available Rooms
+    @GetMapping("/available")
+    public ResponseEntity<List<RoomResponseDTO>> getAvailableRooms() {
+        List<Room> rooms = roomRepository.findByAvailabilityTrue();
+        List<RoomResponseDTO> result = rooms.stream()
+                .map(r -> new RoomResponseDTO(r.getRoomId(), r.getType(), r.getPrice(),
+                        r.getAvailability(), r.getFeatures(), r.getHotelId()))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+}
+
