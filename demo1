@@ -1,1 +1,236 @@
-Anurag Sanjay Jadhva
+एकदम बरोबर 👍 मी तुला सगळ्या फाइल्स इथे थेट देतो, म्हणजे तू VS Code मध्ये थेट copy–paste करू शकशील, zip डाउनलोड नको.
+तू सांगितलंय म्हणून खाली step-by-step दिलंय:
+
+
+---
+
+🧩 1. hotelService.ts
+
+Path: src/app/core/services/hotelService.ts
+
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class Hotel {
+  private apiUrl = 'http://localhost:8080/api/hotels';
+
+  constructor(private http: HttpClient) {}
+
+  getAll(): Observable<any> {
+    return this.http.get(`${this.apiUrl}`);
+  }
+
+  getById(id: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${id}`);
+  }
+
+  searchByLocation(location: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/search?location=${encodeURIComponent(location)}`);
+  }
+
+  filterByRating(rating: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/filter?rating=${rating}`);
+  }
+}
+
+
+---
+
+🏨 2. hotel.ts
+
+Path: src/app/features/hotel/hotel.ts
+
+import { CommonModule } from '@angular/common';
+import { Component, signal } from '@angular/core';
+import { Hotel } from '../../core/services/hotelService';
+import { HttpClientModule } from '@angular/common/http';
+
+@Component({
+  selector: 'app-hotel',
+  standalone: true,
+  imports: [CommonModule, HttpClientModule],
+  templateUrl: './hotel.html',
+  styleUrl: './hotel.css'
+})
+export class HotelComponent {
+  hotels = signal<any[]>([]);
+  message = signal('');
+  loading = signal(false);
+
+  constructor(private hotelService: Hotel) {}
+
+  fetchAll() {
+    this.loading.set(true);
+    this.hotelService.getAll().subscribe({
+      next: (res: any) => {
+        this.hotels.set(res);
+        this.message.set('Fetched all hotels');
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Error fetching hotels', err);
+        this.message.set('Error fetching hotels: ' + (err?.error?.message || err.message || err.statusText));
+        this.loading.set(false);
+      }
+    });
+  }
+
+  fetchById(idInput: string) {
+    const id = Number(idInput);
+    if (!id) {
+      this.message.set('Please enter a valid numeric id');
+      return;
+    }
+    this.loading.set(true);
+    this.hotelService.getById(id).subscribe({
+      next: (res: any) => {
+        this.hotels.set([res]);
+        this.message.set('Fetched hotel id ' + id);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Error fetching hotel by id', err);
+        this.message.set('Error fetching hotel by id: ' + (err?.error?.message || err.message || err.statusText));
+        this.loading.set(false);
+      }
+    });
+  }
+
+  search(location: string) {
+    if (!location) {
+      this.message.set('Enter location');
+      return;
+    }
+    this.loading.set(true);
+    this.hotelService.searchByLocation(location).subscribe({
+      next: (res: any) => {
+        this.hotels.set(res);
+        this.message.set('Search results for "' + location + '"');
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Search error', err);
+        this.message.set('Search error: ' + (err?.error?.message || err.message || err.statusText));
+        this.loading.set(false);
+      }
+    });
+  }
+
+  clear() {
+    this.hotels.set([]);
+    this.message.set('');
+  }
+}
+
+
+---
+
+🧱 3. hotel.html
+
+Path: src/app/features/hotel/hotel.html
+
+<div class="hotel-panel">
+  <h2>Hotel Module (Frontend Demo)</h2>
+
+  <div class="controls">
+    <button (click)="fetchAll()">Fetch All Hotels</button>
+
+    <input #idInput placeholder="Hotel ID" />
+    <button (click)="fetchById(idInput.value)">Get by ID</button>
+
+    <input #loc placeholder="Location" />
+    <button (click)="search(loc.value)">Search by Location</button>
+
+    <button (click)="clear()">Clear</button>
+  </div>
+
+  <div class="status">
+    <div *ngIf="loading()"><em>Loading…</em></div>
+    <div *ngIf="message()">{{ message() }}</div>
+  </div>
+
+  <div class="results" *ngIf="hotels().length > 0">
+    <h3>Results ({{ hotels().length }})</h3>
+    <pre *ngFor="let h of hotels()">{{ h | json }}</pre>
+  </div>
+</div>
+
+
+---
+
+🎨 4. hotel.css
+
+Path: src/app/features/hotel/hotel.css
+
+.hotel-panel {
+  padding: 12px;
+  border: 1px solid #ddd;
+  margin: 8px;
+  border-radius: 6px;
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.controls input {
+  padding: 6px;
+}
+
+.results pre {
+  background: #f7f7f7;
+  padding: 8px;
+  border-radius: 4px;
+  overflow: auto;
+  max-height: 200px;
+}
+
+
+---
+
+⚙️ 5. app.ts मध्ये बदल
+
+Path: src/app/app.ts
+खाली दिलेले दोन बदल कर: 1️⃣ वरच्या imports मध्ये हे जोडा:
+
+import { HotelComponent } from './features/hotel/hotel';
+
+2️⃣ imports[] मध्ये हे जोडा:
+
+imports: [RouterOutlet, Login, HotelComponent],
+
+
+---
+
+🧾 6. app.html मध्ये बदल
+
+Path: src/app/app.html
+
+<app-login></app-login>
+<app-hotel></app-hotel>
+
+
+---
+
+बस! 😎
+आता सगळं save करून टर्मिनलमध्ये जा आणि हे दोन कमांड चालव:
+
+npm install
+ng serve --open
+
+ब्राउझरमध्ये http://localhost:4200 उघडलं की खाली hotel module दिसेल.
+बटणं वापरून backend (localhost:8080) वरची endpoints तपास.
+
+
+---
+
+हवं असल्यास मी पुढचं पाऊल (POST/DELETE UI) पण करून देऊ शकतो — सांग की हवा का?
+
