@@ -1,10 +1,15 @@
-एकदम बरोबर 👍 मी तुला सगळ्या फाइल्स इथे थेट देतो, म्हणजे तू VS Code मध्ये थेट copy–paste करू शकशील, zip डाउनलोड नको.
-तू सांगितलंय म्हणून खाली step-by-step दिलंय:
+परफेक्ट! 🔥
+जर Angular 20 आहे तर तुझ्याकडे नवीनतम “signals”, “standalone components” आणि “injectable services” सर्व features उपलब्ध आहेत.
+म्हणजे — मी आधी दिलेला signal() वापरलेला कोड (HotelComponent चा पहिला version) बिलकुल बरोबर चालेल. ✅
+
+पण तरीही काही लोकल सेटअप issue मुळे तुला error दिसतोय असं वाटतं, त्यामुळे चला step-by-step verify करूया 👇
 
 
 ---
 
-🧩 1. hotelService.ts
+✅ Step-by-Step Check (Angular 20 साठी)
+
+🧩 1️⃣ hotelService.ts
 
 Path: src/app/core/services/hotelService.ts
 
@@ -40,14 +45,14 @@ export class Hotel {
 
 ---
 
-🏨 2. hotel.ts
+🏨 2️⃣ hotel.ts
 
 Path: src/app/features/hotel/hotel.ts
 
 import { CommonModule } from '@angular/common';
 import { Component, signal } from '@angular/core';
-import { Hotel } from '../../core/services/hotelService';
 import { HttpClientModule } from '@angular/common/http';
+import { Hotel } from '../../core/services/hotelService';
 
 @Component({
   selector: 'app-hotel',
@@ -129,88 +134,30 @@ export class HotelComponent {
 
 ---
 
-🧱 3. hotel.html
-
-Path: src/app/features/hotel/hotel.html
-
-<div class="hotel-panel">
-  <h2>Hotel Module (Frontend Demo)</h2>
-
-  <div class="controls">
-    <button (click)="fetchAll()">Fetch All Hotels</button>
-
-    <input #idInput placeholder="Hotel ID" />
-    <button (click)="fetchById(idInput.value)">Get by ID</button>
-
-    <input #loc placeholder="Location" />
-    <button (click)="search(loc.value)">Search by Location</button>
-
-    <button (click)="clear()">Clear</button>
-  </div>
-
-  <div class="status">
-    <div *ngIf="loading()"><em>Loading…</em></div>
-    <div *ngIf="message()">{{ message() }}</div>
-  </div>
-
-  <div class="results" *ngIf="hotels().length > 0">
-    <h3>Results ({{ hotels().length }})</h3>
-    <pre *ngFor="let h of hotels()">{{ h | json }}</pre>
-  </div>
-</div>
-
-
----
-
-🎨 4. hotel.css
-
-Path: src/app/features/hotel/hotel.css
-
-.hotel-panel {
-  padding: 12px;
-  border: 1px solid #ddd;
-  margin: 8px;
-  border-radius: 6px;
-}
-
-.controls {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.controls input {
-  padding: 6px;
-}
-
-.results pre {
-  background: #f7f7f7;
-  padding: 8px;
-  border-radius: 4px;
-  overflow: auto;
-  max-height: 200px;
-}
-
-
----
-
-⚙️ 5. app.ts मध्ये बदल
+⚙️ 3️⃣ app.ts
 
 Path: src/app/app.ts
-खाली दिलेले दोन बदल कर: 1️⃣ वरच्या imports मध्ये हे जोडा:
 
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { Login } from './features/auth/login/login';
 import { HotelComponent } from './features/hotel/hotel';
 
-2️⃣ imports[] मध्ये हे जोडा:
-
-imports: [RouterOutlet, Login, HotelComponent],
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet, Login, HotelComponent],
+  templateUrl: './app.html',
+  styleUrl: './app.css'
+})
+export class AppComponent {
+  title = 'SmartHotelBookingSystem';
+}
 
 
 ---
 
-🧾 6. app.html मध्ये बदल
+🧾 4️⃣ app.html
 
 Path: src/app/app.html
 
@@ -220,17 +167,27 @@ Path: src/app/app.html
 
 ---
 
-बस! 😎
-आता सगळं save करून टर्मिनलमध्ये जा आणि हे दोन कमांड चालव:
+💡 आता हे सर्व तपासून पाहा:
+
+1. VS Code मध्ये सर्व फाइल्स सेव्ह करा.
+
+
+2. टर्मिनलमध्ये जा →
 
 npm install
 ng serve --open
 
-ब्राउझरमध्ये http://localhost:4200 उघडलं की खाली hotel module दिसेल.
-बटणं वापरून backend (localhost:8080) वरची endpoints तपास.
+
+3. जर अजून error येतोय तर मला खालील माहिती दे:
+
+Full error message (लाल मजकूर)
+
+कोणत्या फाईलमध्ये (hotelService.ts / hotel.ts / app.ts)
 
 
----
 
-हवं असल्यास मी पुढचं पाऊल (POST/DELETE UI) पण करून देऊ शकतो — सांग की हवा का?
+
+मग मी तुला थेट error line-by-line fix देईन (Angular 20 साठी exact syntax वापरून).
+
+तू error message इथे paste करशील का आता?
 
