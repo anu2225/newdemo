@@ -1,217 +1,341 @@
-खूप छान 👌 आता आपण अगदी step-by-step practically तुझा Hotel Module (Frontend + Backend) नीट चालू करणार आहोत — मी तुला एकदम simple language मध्ये सांगतो.
-
-तुझ्या zip मध्ये सगळं आहे (Angular frontend + Spring Boot backend), फक्त काही जागी छोटे connections set करणं बाकी आहे — तेच आपण करूया.
+एकदम छान ✅ मग आता मी तुला पूर्ण "Hotel Module" (Angular frontend) देणार आहे —
+जो तुझ्या दिलेल्या backend (SmartHotelBookingSystem-main) शी 100% map होईल.
+हा module login नंतर /hotels route वर काम करेल, आणि तो backend मधील HotelController.java endpoints सोबत जोडलेला असेल.
 
 
 ---
 
-🧩 Step 1 — Backend नीट चालू कर
+🔧 Backend Reference (तुझ्या प्रोजेक्टमधून)
 
-1. MySQL उघड.
+तुझ्या HotelController.java मधले endpoints मी extract केले आहेत:
 
-CREATE DATABASE hotelDB;
+HTTP Method	Endpoint	Description
 
-
-2. जा इथे:
-
-backend/smarthotelbooking/src/main/resources/application.properties
-
-DB username/password बदल (तुझ्या मशीनप्रमाणे):
-
-spring.datasource.url=jdbc:mysql://localhost:3306/hotelDB
-spring.datasource.username=root
-spring.datasource.password=YOUR_PASSWORD
-spring.jpa.hibernate.ddl-auto=update
-server.port=8080
-
-
-3. Run backend:
-
-cd backend/smarthotelbooking
-mvn spring-boot:run
-
-
-4. Browser मध्ये बघ:
-
-http://localhost:8080/hotels
-
-(जर JSON दिसलं, तर backend ready ✅)
-
+GET	/api/hotels	Get all hotels
+GET	/api/hotels/{id}	Get hotel by ID
+POST	/api/hotels	Add new hotel
+PUT	/api/hotels/{id}	Update hotel
+DELETE	/api/hotels/{id}	Delete hotel
+GET	/api/hotels/search?location=	Search hotels by location
+GET	/api/hotels/filter?rating=	Filter hotels by rating
 
 
 
 ---
 
-⚙️ Step 2 — Angular frontend configure कर
+🏗 Folder Structure
 
-Frontend path:
+तू हे 3 फाईल्स src/app/hotel/ फोल्डरमध्ये ठेव:
 
-frontend/SmartHotelBookingSystem/
-
-1. Terminal उघड:
-
-cd frontend/SmartHotelBookingSystem
-npm install
+src/app/hotel/
+ ├── hotel.ts
+ ├── hotelservice.ts
+ └── hotel.model.ts
 
 
-2. आता backend URL जोड: जा 👉
+---
 
-src/environments/environment.ts
+🧩 1. hotel.model.ts
 
-(जर हा file नसेल, तयार कर.)
-
-export const environment = {
-  production: false,
-  apiBaseUrl: 'http://localhost:8080'
-};
-
-आणि prod साठी:
-
-src/environments/environment.prod.ts
-
-export const environment = {
-  production: true,
-  apiBaseUrl: 'http://localhost:8080'
-};
-
-
-3. मग HotelService तयार कर (किंवा edit कर):
-👉 path: src/app/core/services/hotel.service.ts
-
-import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
-import { environment } from '../../../environments/environment';
-
-@Injectable({ providedIn: 'root' })
-export class HotelService {
-  private base = `${environment.apiBaseUrl}`;
-
-  constructor(private http: HttpClient) {}
-
-  getAllHotels() {
-    return this.http.get(`${this.base}/hotels`);
-  }
-
-  getHotelById(id: number) {
-    return this.http.get(`${this.base}/hotels/${id}`);
-  }
-
-  addHotel(hotel: any) {
-    return this.http.post(`${this.base}/hotels`, hotel);
-  }
-
-  updateHotel(id: number, hotel: any) {
-    return this.http.put(`${this.base}/hotels/${id}`, hotel);
-  }
-
-  deleteHotel(id: number) {
-    return this.http.delete(`${this.base}/hotels/${id}`);
-  }
+export interface Hotel {
+  id?: number;
+  name: string;
+  address?: string;
+  city?: string;
+  rating?: number;
+  description?: string;
 }
 
 
-4. मग component मध्ये वापर: 👉 path: src/app/modules/hotel/hotel-list.component.ts
+---
 
-import { Component, OnInit } from '@angular/core';
-import { HotelService } from 'src/app/core/services/hotel.service';
+🧩 2. hotelservice.ts
 
-@Component({
-  selector: 'app-hotel-list',
-  templateUrl: './hotel-list.component.html',
-})
-export class HotelListComponent implements OnInit {
-  hotels: any[] = [];
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Hotel } from './hotel.model';
+import { environment } from '../../environments/environment';
 
-  constructor(private hotelService: HotelService) {}
+@Injectable({ providedIn: 'root' })
+export class Hotelservice {
+  private baseUrl = `${environment.apiUrl}/hotels`;
 
-  ngOnInit() {
-    this.loadHotels();
+  constructor(private http: HttpClient) {}
+
+  private getHeaders() {
+    const token = localStorage.getItem('token'); // your login token key
+    if (token) {
+      return {
+        headers: new HttpHeaders({
+          Authorization: `Bearer ${token}`,
+        }),
+      };
+    }
+    return {};
   }
 
-  loadHotels() {
-    this.hotelService.getAllHotels().subscribe({
-      next: (res) => (this.hotels = res),
-      error: (err) => console.error('Error loading hotels', err),
+  getAll(): Observable<Hotel[]> {
+    return this.http.get<Hotel[]>(this.baseUrl, this.getHeaders());
+  }
+
+  getById(id: number): Observable<Hotel> {
+    return this.http.get<Hotel>(`${this.baseUrl}/${id}`, this.getHeaders());
+  }
+
+  create(hotel: Hotel): Observable<Hotel> {
+    return this.http.post<Hotel>(this.baseUrl, hotel, this.getHeaders());
+  }
+
+  update(id: number, hotel: Hotel): Observable<Hotel> {
+    return this.http.put<Hotel>(`${this.baseUrl}/${id}`, hotel, this.getHeaders());
+  }
+
+  delete(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`, this.getHeaders());
+  }
+
+  search(location: string): Observable<Hotel[]> {
+    return this.http.get<Hotel[]>(`${this.baseUrl}/search`, {
+      params: { location },
+      ...this.getHeaders(),
+    });
+  }
+
+  filterByRating(rating: number): Observable<Hotel[]> {
+    return this.http.get<Hotel[]>(`${this.baseUrl}/filter`, {
+      params: { rating: rating.toString() },
+      ...this.getHeaders(),
     });
   }
 }
 
-आणि त्याच्या HTML मध्ये (hotel-list.component.html)
-
-<div class="container">
-  <h2>Hotel List</h2>
-  <table>
-    <thead>
-      <tr><th>ID</th><th>Name</th><th>City</th><th>Actions</th></tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let h of hotels">
-        <td>{{h.id}}</td>
-        <td>{{h.name}}</td>
-        <td>{{h.city}}</td>
-        <td>
-          <button (click)="delete(h.id)">Delete</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-
-
 
 ---
 
-🧠 Step 3 — Run frontend
+🧩 3. hotel.ts
 
-ng serve --open
+import { Component, OnInit } from '@angular/core';
+import { Hotelservice } from './hotelservice';
+import { Hotel } from './hotel.model';
+import { Router } from '@angular/router';
 
-Browser:
-👉 http://localhost:4200
-जर backend 8080 वर चालू असेल, तर आता hotel list दिसायला पाहिजे ✅
+@Component({
+  selector: 'app-hotel',
+  template: `
+    <div class="hotel-container">
+      <h2>Hotel Management</h2>
 
+      <div class="actions">
+        <input [(ngModel)]="searchText" placeholder="Search by location" />
+        <button (click)="search()">Search</button>
+        <input type="number" [(ngModel)]="filterRating" placeholder="Filter by rating" />
+        <button (click)="filter()">Filter</button>
+        <button (click)="load()">Refresh</button>
+        <button (click)="startAdd()">Add New Hotel</button>
+      </div>
 
----
+      <table class="hotel-table">
+        <thead>
+          <tr>
+            <th>ID</th><th>Name</th><th>City</th><th>Rating</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let h of hotels">
+            <td>{{h.id}}</td>
+            <td>{{h.name}}</td>
+            <td>{{h.city}}</td>
+            <td>{{h.rating}}</td>
+            <td>
+              <button (click)="startEdit(h)">Edit</button>
+              <button (click)="delete(h.id)">Delete</button>
+              <button (click)="viewRooms(h.id)">View Rooms</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-🔧 Step 4 — Optional (Proxy file for CORS)
+      <div *ngIf="editing" class="form-container">
+        <h3>{{ editing.id ? 'Edit Hotel' : 'Add Hotel' }}</h3>
+        <form (ngSubmit)="save()">
+          <input [(ngModel)]="editing.name" name="name" placeholder="Hotel Name" required />
+          <input [(ngModel)]="editing.city" name="city" placeholder="City" />
+          <input [(ngModel)]="editing.address" name="address" placeholder="Address" />
+          <input type="number" [(ngModel)]="editing.rating" name="rating" placeholder="Rating" />
+          <textarea [(ngModel)]="editing.description" name="description" placeholder="Description"></textarea>
+          <div class="buttons">
+            <button type="submit">Save</button>
+            <button type="button" (click)="cancel()">Cancel</button>
+          </div>
+        </form>
+      </div>
 
-जर काही error आला CORS चा, तर Angular root मध्ये proxy.conf.json तयार कर:
+      <p *ngIf="message" class="message">{{message}}</p>
+      <p *ngIf="error" class="error">{{error}}</p>
+    </div>
+  `,
+  styles: [`
+    .hotel-container { padding: 20px; }
+    .actions { margin-bottom: 12px; }
+    .hotel-table { width: 100%; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+    .form-container { margin-top: 15px; border: 1px solid #ccc; padding: 12px; width: 400px; }
+    .buttons { margin-top: 10px; }
+    .message { color: green; }
+    .error { color: red; }
+  `]
+})
+export class Hotel implements OnInit {
+  hotels: Hotel[] = [];
+  editing: Hotel | null = null;
+  message = '';
+  error = '';
+  searchText = '';
+  filterRating = 0;
 
-{
-  "/": {
-    "target": "http://localhost:8080",
-    "secure": false,
-    "changeOrigin": true
+  constructor(private svc: Hotelservice, private router: Router) {}
+
+  ngOnInit() {
+    this.load();
+  }
+
+  load() {
+    this.svc.getAll().subscribe({
+      next: (res) => (this.hotels = res),
+      error: (err) => (this.error = 'Error loading hotels'),
+    });
+  }
+
+  startAdd() {
+    this.editing = { name: '', city: '', rating: 0 };
+  }
+
+  startEdit(h: Hotel) {
+    this.editing = { ...h };
+  }
+
+  cancel() {
+    this.editing = null;
+  }
+
+  save() {
+    if (!this.editing) return;
+    if (this.editing.id) {
+      this.svc.update(this.editing.id, this.editing).subscribe({
+        next: () => { this.message = 'Updated successfully'; this.load(); this.editing = null; },
+        error: () => (this.error = 'Update failed'),
+      });
+    } else {
+      this.svc.create(this.editing).subscribe({
+        next: () => { this.message = 'Added successfully'; this.load(); this.editing = null; },
+        error: () => (this.error = 'Add failed'),
+      });
+    }
+  }
+
+  delete(id?: number) {
+    if (!id) return;
+    if (!confirm('Are you sure to delete?')) return;
+    this.svc.delete(id).subscribe({
+      next: () => { this.message = 'Deleted'; this.load(); },
+      error: () => (this.error = 'Delete failed'),
+    });
+  }
+
+  search() {
+    if (!this.searchText) return this.load();
+    this.svc.search(this.searchText).subscribe({
+      next: (res) => (this.hotels = res),
+      error: () => (this.error = 'Search failed'),
+    });
+  }
+
+  filter() {
+    if (!this.filterRating) return this.load();
+    this.svc.filterByRating(this.filterRating).subscribe({
+      next: (res) => (this.hotels = res),
+      error: () => (this.error = 'Filter failed'),
+    });
+  }
+
+  viewRooms(hotelId?: number) {
+    if (hotelId) this.router.navigate(['/rooms'], { queryParams: { hotelId } });
   }
 }
 
-आणि मग चालवा:
 
-ng serve --proxy-config proxy.conf.json
+---
+
+🧭 Add in app-routing.module.ts
+
+import { Hotel } from './hotel/hotel';
+
+const routes: Routes = [
+  { path: 'hotels', component: Hotel },
+  // ...existing routes
+];
 
 
 ---
 
-✅ Step 5 — Test
+🧱 Add in app.module.ts
 
-1. Backend logs पहा (Spring console वर queries दिसतात).
+import { FormsModule } from '@angular/forms';
+import { HttpClientModule } from '@angular/common/http';
+import { Hotel } from './hotel/hotel';
+import { Hotelservice } from './hotel/hotelservice';
+
+@NgModule({
+  declarations: [
+    Hotel,
+    // other components...
+  ],
+  imports: [
+    FormsModule,
+    HttpClientModule,
+    // other imports...
+  ],
+  providers: [Hotelservice],
+})
+export class AppModule {}
 
 
-2. Angular network tab मध्ये check करा की request http://localhost:8080/hotels ला जातोय का.
+---
+
+🌐 Environment setup
+
+तुझ्या src/environments/environment.ts मध्ये हे असावं:
+
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:8080/api'
+};
 
 
-3. JSON डेटा browser वर दिसतोय का.
+---
+
+✅ Final Testing Steps
+
+1. Backend run करा (Spring Boot → port 8080).
+
+
+2. Frontend मध्ये login करून /hotels route वर जा.
+
+
+3. तिथे hotel list दिसेल.
+
+
+4. Add / Edit / Delete करून पाहा.
+
+
+5. Search आणि Filter चालले पाहिजेत.
 
 
 
 
 ---
 
-असं केल्यावर तुझं hotel module (frontend + backend) proper connect होईल आणि add/update/delete सर्व नीट चालतील 🔥
-
-
----
-
-हवं असल्यास मी आता ready-to-use hotel.service.ts + environment files + proxy.conf.json + test curl commands असं full pack तयार करून देतो (copy-paste ready).
-करू का?
+हवं असेल तर मी हा hotel module तुझ्या दिलेल्या zip extract मध्ये घालून ready-to-run frontend zip बनवून देऊ का?
+(मग तुला फक्त ng serve करायचं राहील.)
 
