@@ -1,20 +1,22 @@
-ठीक आहे! 🔥
+अरे बरोबर! 😎 आता तुला हवं आहे की Get All Hotels table मध्ये Rating column जवळ Update button येईल, पण सर्व काही एका table मध्ये, row-wise, आणि फक्त Manager login असेल तर.
 
-मी तुला आता full proper working GetAllHotels component तयार करून देतो जे:
+मी तुला full working GetAllHotels component देतो ज्यात:
 
-सर्व hotels list show करेल
+Hotels table neat display
 
-Update button प्रत्येक hotel row समोर दिसेल (Manager role check included)
+Rating column show
 
-Token + role logic included
+प्रत्येक hotel row समोर Update button (Manager only)
 
-Clean TypeScript + Angular standalone component style
+Update button click → UpdateHotel page load + prefilled form
+
+Non-manager user → button hide + message
 
 
 
 ---
 
-1️⃣ hotel.ts (GetAllHotels component)
+1️⃣ hotel.ts (GetAllHotels)
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -41,15 +43,13 @@ export class HotelComponent implements OnInit {
   hotels: Hotel[] = [];
   loading = true;
   error = '';
-  role = ''; // user role
+  role = '';
 
   constructor(private hotelService: HotelService) {}
 
   ngOnInit(): void {
-    // fetch role from localStorage and normalize
+    // Role from localStorage, normalize
     this.role = (localStorage.getItem('role') || '').trim().toLowerCase();
-
-    // fetch hotels
     this.getHotels();
   }
 
@@ -57,7 +57,6 @@ export class HotelComponent implements OnInit {
     this.loading = true;
     this.hotelService.getHotelList().subscribe({
       next: (response: Hotel[]) => {
-        console.log("Hotels fetched:", response);
         this.hotels = response;
         this.loading = false;
       },
@@ -105,6 +104,7 @@ export class HotelComponent implements OnInit {
   </table>
 
   <p *ngIf="!loading && hotels.length === 0">No hotels found</p>
+  <p *ngIf="role !== 'manager'">Only Manager can update hotels!</p>
 </div>
 
 
@@ -113,7 +113,7 @@ export class HotelComponent implements OnInit {
 3️⃣ hotel.css
 
 .hotel-container {
-  width: 800px;
+  width: 900px;
   margin: 40px auto;
   padding: 20px;
   background-color: #f8f9fa;
@@ -158,52 +158,28 @@ button:hover {
 
 ---
 
-🔑 Key Points
+✅ काय होईल
 
-1. Update button प्रत्येक row मध्ये visible (Manager role only).
-
-
-2. Role check robust — localStorage.getItem('role')?.trim().toLowerCase()
+1. /hotels page open → Table with Name, Location, Amenities, Rating
 
 
-3. Hotels fetched from backend via HotelService.getHotelList().
+2. प्रत्येक row समोर Update button (Manager login only)
 
 
-4. Loading + error handling included.
+3. Non-manager → button hide + message:
+
+Only Manager can update hotels!
 
 
-5. Standalone component — just import into routes.
-
-
-
-
----
-
-🔄 Usage
-
-1. Ensure login sets role:
-
-
-
-localStorage.setItem('role', 'Manager');
-localStorage.setItem('token', 'JWT_TOKEN_HERE');
-
-2. Route in app.routes.ts:
-
-
-
-import { HotelComponent } from './features/hotel/get-all-hotels/hotel';
-
-{ path: 'hotels', component: HotelComponent }
-
-3. Browser → /hotels → प्रत्येक hotel समोर Update button दिसेल.
+4. Update button click → /update-hotel/:id route → UpdateHotel component prefilled form
 
 
 
 
 ---
 
-जर तू हवं तर मी आता Delete button सुद्धा add करून full CRUD ready version देऊ शकतो 🔥
+जर तुला हवं तर मी आता UpdateHotel component देखील fully prefilled + submit functional ready-to-copy देतो.
+म्हणजे click → form येईल → update backend → redirect back to /hotels ✅
 
-तू Delete feature साठी तयार आहेस का?
+देऊ का मी?
 
