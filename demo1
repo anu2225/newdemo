@@ -1,7 +1,56 @@
 मस्त 👌 आता बघ — हे part म्हणजे Angular frontend मधून backend ला PUT /api/hotels/{id} call करून hotel update करायचं आहे.
 मी तुला हे step-by-step आणि working code देतो 🔥
 
+.container {
+  width: 400px;
+  margin: 40px auto;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #f8f9fa;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
 
+h2 {
+  text-align: center;
+  color: #007bff;
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+button {
+  width: 100%;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+.message {
+  margin-top: 15px;
+  text-align: center;
+  font-weight: 600;
+  color: green;
+}
 ---
 
 🧩 Step 1: Folder structure
