@@ -1,93 +1,105 @@
-अरे बरं! 👍
-म्हणजे तुला आता Create Hotel feature पुन्हा clean, standalone, folder-wise setup पाहिजे, जिथे “components” शब्द वापरला नाही आणि route + import error-free राहतील.
-
-चल, मी तुझ्या folder structure नुसार देतो:
-
-
----
-
-1️⃣ Folder structure
-
-src/
- └── app/
-      └── features/
-           └── hotel/
-                └── create-hotel/
-                     ├── create-hotel.ts
-                     ├── create-hotel.html
-                     └── create-hotel.css
+एकदम बरोबर ✅
+तुमच्या naming convention नुसार आपण hotel.ts आणि hotel.html या दोन फाइल्समध्ये Hotel Create (Reactive Form) component बनवू.
+(म्हणजेच — hotel.ts = component TypeScript file, आणि hotel.html = HTML template.)
 
 
 ---
 
-2️⃣ create-hotel.ts (standalone)
+🧩 hotel.ts  (Hotel Create Reactive Form)
 
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { Component } from '@angular/core';
-import { HotelService } from '../../core/services/hotel.service';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HotelService } from '../services/hotel.service';
 
 @Component({
-  selector: 'app-create-hotel',
+  selector: 'hotel-create',
   standalone: true,
-  imports: [CommonModule, FormsModule],
-  templateUrl: './create-hotel.html',
-  styleUrls: ['./create-hotel.css']
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './hotel.html',
+  styleUrls: ['./hotel.css']
 })
-export class CreateHotel {
-  hotel = {
-    hotelName: '',
-    city: '',
-    address: '',
-    rating: 0
-  };
-
+export class HotelCreateComponent {
+  hotelForm: FormGroup;
   message = '';
-  token = ''; // JWT token (login नंतर localStorage मधून घेता येईल)
+  token = ''; // JWT token (login नंतर localStorage मधून घ्यायचा)
 
-  constructor(private hotelService: HotelService, private router: Router) {}
+  constructor(
+    private fb: FormBuilder,
+    private hotelService: HotelService,
+    private router: Router
+  ) {
+    // Backend DTO fields शी match होणारा form
+    this.hotelForm = this.fb.group({
+      name: ['', [Validators.required, Validators.minLength(3)]],
+      location: ['', Validators.required],
+      amenities: ['', Validators.required],
+      rating: [null, [Validators.required, Validators.min(1), Validators.max(5)]]
+    });
+  }
 
-  createHotel() {
-    if (!this.hotel.hotelName || !this.hotel.city) {
-      this.message = 'Please fill all fields!';
+  // Submit form
+  onSubmit() {
+    if (this.hotelForm.invalid) {
+      this.message = 'Please fill all required fields correctly!';
       return;
     }
 
-    this.hotelService.createHotel(this.hotel, this.token).subscribe({
+    const hotelData = this.hotelForm.value;
+
+    this.hotelService.createHotel(hotelData, this.token).subscribe({
       next: () => {
         this.message = 'Hotel created successfully!';
-        this.router.navigate(['/hotels']); // Redirect to Get All Hotels page
+        this.router.navigate(['/hotels']);
       },
-      error: () => {
+      error: (err) => {
+        console.error(err);
         this.message = 'Something went wrong!';
       }
     });
+  }
+
+  // Short form access
+  get f() {
+    return this.hotelForm.controls;
   }
 }
 
 
 ---
 
-3️⃣ create-hotel.html
+🪶 hotel.html  (Reactive Form Template)
 
 <div class="container">
   <h2>Add New Hotel</h2>
 
-  <form (ngSubmit)="createHotel()">
+  <form [formGroup]="hotelForm" (ngSubmit)="onSubmit()">
     <label>Hotel Name:</label>
-    <input type="text" [(ngModel)]="hotel.hotelName" name="hotelName" required />
+    <input type="text" formControlName="name" placeholder="Enter hotel name" />
+    <div class="error" *ngIf="f['name'].touched && f['name'].invalid">
+      Hotel name is required (min 3 chars)
+    </div>
 
-    <label>City:</label>
-    <input type="text" [(ngModel)]="hotel.city" name="city" required />
+    <label>Location:</label>
+    <input type="text" formControlName="location" placeholder="Enter location" />
+    <div class="error" *ngIf="f['location'].touched && f['location'].invalid">
+      Location is required
+    </div>
 
-    <label>Address:</label>
-    <input type="text" [(ngModel)]="hotel.address" name="address" required />
+    <label>Amenities:</label>
+    <input type="text" formControlName="amenities" placeholder="Enter amenities" />
+    <div class="error" *ngIf="f['amenities'].touched && f['amenities'].invalid">
+      Amenities are required
+    </div>
 
-    <label>Rating:</label>
-    <input type="number" [(ngModel)]="hotel.rating" name="rating" required />
+    <label>Rating (1–5):</label>
+    <input type="number" formControlName="rating" placeholder="Enter rating" />
+    <div class="error" *ngIf="f['rating'].touched && f['rating'].invalid">
+      Rating should be between 1 and 5
+    </div>
 
-    <button type="submit">Create Hotel</button>
+    <button type="submit" [disabled]="hotelForm.invalid">Create Hotel</button>
   </form>
 
   <p class="message">{{ message }}</p>
@@ -96,15 +108,15 @@ export class CreateHotel {
 
 ---
 
-4️⃣ create-hotel.css
+🎨 Optional (जर हवे असेल तर) hotel.css
 
 .container {
-  width: 400px;
+  width: 420px;
   margin: 40px auto;
-  padding: 20px;
+  padding: 25px;
   border-radius: 10px;
   background-color: #f8f9fa;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
 
 label {
@@ -132,6 +144,12 @@ button {
   cursor: pointer;
 }
 
+.error {
+  color: red;
+  font-size: 13px;
+  margin-top: 3px;
+}
+
 .message {
   margin-top: 15px;
   text-align: center;
@@ -142,34 +160,33 @@ button {
 
 ---
 
-5️⃣ Route setup (app.routes.ts)
+✅ Flow:
 
-import { Routes } from '@angular/router';
-import { CreateHotel } from './features/hotel/create-hotel/create-hotel';
-import { GetAllHotels } from './features/hotel/get-all-hotels/get-all-hotels';
+1. /hotel-create route ने हा form दिसेल.
 
-export const routes: Routes = [
-  { path: 'create-hotel', component: CreateHotel },
-  { path: 'hotels', component: GetAllHotels },
-  { path: '', redirectTo: '/create-hotel', pathMatch: 'full' }
-];
+
+2. Reactive form validation properly handle करेल.
+
+
+3. Backend DTO (HotelRequestDTO) शी full mapping:
+
+name
+
+location
+
+amenities
+
+rating
+
+
+
+4. Success झाल्यावर “Hotel created successfully!” आणि redirect /hotels.
+
+
 
 
 ---
 
-✅ आता:
-
-Browser मध्ये http://localhost:4200/create-hotel → Create Hotel form
-
-फॉर्म भरून submit → backend call → success → /hotels redirect
-
-सगळे imports / paths folder structure नुसार आहेत, TS2307 error नाही
-
-
-
----
-
-तुला हवं असल्यास मी Create → Get All → Update → Delete full flow folder-wise ready करून देऊ शकतो, जेणेकरून तुमच्या Angular project मध्ये एकदम plug-and-play राहील.
-
-तू हवंय का मी तयार करु?
+आता सांग — ह्याच style मध्ये मी पुढे Update Hotel (Reactive Form) द्यावा का?
+(त्याच naming style मध्ये — hotel-update.ts, hotel-update.html)
 
