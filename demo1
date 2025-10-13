@@ -1,341 +1,228 @@
-एकदम छान ✅ मग आता मी तुला पूर्ण "Hotel Module" (Angular frontend) देणार आहे —
-जो तुझ्या दिलेल्या backend (SmartHotelBookingSystem-main) शी 100% map होईल.
-हा module login नंतर /hotels route वर काम करेल, आणि तो backend मधील HotelController.java endpoints सोबत जोडलेला असेल.
+Perfect 💪 समजलो!
+आपण आता Hotel module चं frontend (Angular standalone) part step-by-step तयार करणार आहोत 🔥
+
+सर्व फाइल्स तुला क्रमाने देतो:
+(1️⃣ service → 2️⃣ model → 3️⃣ component.ts → 4️⃣ html → 5️⃣ css → 6️⃣ route setup)
 
 
 ---
 
-🔧 Backend Reference (तुझ्या प्रोजेक्टमधून)
+🧩 1️⃣ hotel.service.ts
 
-तुझ्या HotelController.java मधले endpoints मी extract केले आहेत:
-
-HTTP Method	Endpoint	Description
-
-GET	/api/hotels	Get all hotels
-GET	/api/hotels/{id}	Get hotel by ID
-POST	/api/hotels	Add new hotel
-PUT	/api/hotels/{id}	Update hotel
-DELETE	/api/hotels/{id}	Delete hotel
-GET	/api/hotels/search?location=	Search hotels by location
-GET	/api/hotels/filter?rating=	Filter hotels by rating
-
-
-
----
-
-🏗 Folder Structure
-
-तू हे 3 फाईल्स src/app/hotel/ फोल्डरमध्ये ठेव:
-
-src/app/hotel/
- ├── hotel.ts
- ├── hotelservice.ts
- └── hotel.model.ts
-
-
----
-
-🧩 1. hotel.model.ts
-
-export interface Hotel {
-  id?: number;
-  name: string;
-  address?: string;
-  city?: string;
-  rating?: number;
-  description?: string;
-}
-
-
----
-
-🧩 2. hotelservice.ts
+(ही आधीच तयार आहे, पण final clean version खाली देतो 👇)
 
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Hotel } from './hotel.model';
-import { environment } from '../../environments/environment';
 
-@Injectable({ providedIn: 'root' })
-export class Hotelservice {
-  private baseUrl = `${environment.apiUrl}/hotels`;
+@Injectable({
+  providedIn: 'root'
+})
+export class HotelService {
+  private apiUrl = 'http://localhost:8080/api/hotels';
 
   constructor(private http: HttpClient) {}
 
-  private getHeaders() {
-    const token = localStorage.getItem('token'); // your login token key
-    if (token) {
-      return {
-        headers: new HttpHeaders({
-          Authorization: `Bearer ${token}`,
-        }),
-      };
-    }
-    return {};
+  getHotelList(): Observable<any> {
+    return this.http.get(`${this.apiUrl}`);
   }
 
-  getAll(): Observable<Hotel[]> {
-    return this.http.get<Hotel[]>(this.baseUrl, this.getHeaders());
+  getHotelById(id: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${id}`);
   }
 
-  getById(id: number): Observable<Hotel> {
-    return this.http.get<Hotel>(`${this.baseUrl}/${id}`, this.getHeaders());
+  createHotel(hotelData: any, token: string): Observable<any> {
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    return this.http.post(this.apiUrl, hotelData, { headers });
   }
 
-  create(hotel: Hotel): Observable<Hotel> {
-    return this.http.post<Hotel>(this.baseUrl, hotel, this.getHeaders());
+  updateHotel(id: number, data: any, token: string): Observable<any> {
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    return this.http.put(`${this.apiUrl}/${id}`, data, { headers });
   }
 
-  update(id: number, hotel: Hotel): Observable<Hotel> {
-    return this.http.put<Hotel>(`${this.baseUrl}/${id}`, hotel, this.getHeaders());
-  }
-
-  delete(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.baseUrl}/${id}`, this.getHeaders());
-  }
-
-  search(location: string): Observable<Hotel[]> {
-    return this.http.get<Hotel[]>(`${this.baseUrl}/search`, {
-      params: { location },
-      ...this.getHeaders(),
-    });
-  }
-
-  filterByRating(rating: number): Observable<Hotel[]> {
-    return this.http.get<Hotel[]>(`${this.baseUrl}/filter`, {
-      params: { rating: rating.toString() },
-      ...this.getHeaders(),
-    });
+  deleteHotel(id: number, token: string): Observable<any> {
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    return this.http.delete(`${this.apiUrl}/${id}`, { headers });
   }
 }
 
 
 ---
 
-🧩 3. hotel.ts
+🧱 2️⃣ hotel.model.ts
 
-import { Component, OnInit } from '@angular/core';
-import { Hotelservice } from './hotelservice';
-import { Hotel } from './hotel.model';
+(Hotel object define करायचा model file)
+
+export interface Hotel {
+  hotelId?: number;
+  hotelName: string;
+  city: string;
+  address: string;
+  rating: number;
+}
+
+
+---
+
+🧑‍💻 3️⃣ create-hotel.component.ts
+
+(Standalone component — new hotel add करण्यासाठी)
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HotelService } from '../services/hotel.service';
 import { Router } from '@angular/router';
 
 @Component({
-  selector: 'app-hotel',
-  template: `
-    <div class="hotel-container">
-      <h2>Hotel Management</h2>
-
-      <div class="actions">
-        <input [(ngModel)]="searchText" placeholder="Search by location" />
-        <button (click)="search()">Search</button>
-        <input type="number" [(ngModel)]="filterRating" placeholder="Filter by rating" />
-        <button (click)="filter()">Filter</button>
-        <button (click)="load()">Refresh</button>
-        <button (click)="startAdd()">Add New Hotel</button>
-      </div>
-
-      <table class="hotel-table">
-        <thead>
-          <tr>
-            <th>ID</th><th>Name</th><th>City</th><th>Rating</th><th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let h of hotels">
-            <td>{{h.id}}</td>
-            <td>{{h.name}}</td>
-            <td>{{h.city}}</td>
-            <td>{{h.rating}}</td>
-            <td>
-              <button (click)="startEdit(h)">Edit</button>
-              <button (click)="delete(h.id)">Delete</button>
-              <button (click)="viewRooms(h.id)">View Rooms</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      <div *ngIf="editing" class="form-container">
-        <h3>{{ editing.id ? 'Edit Hotel' : 'Add Hotel' }}</h3>
-        <form (ngSubmit)="save()">
-          <input [(ngModel)]="editing.name" name="name" placeholder="Hotel Name" required />
-          <input [(ngModel)]="editing.city" name="city" placeholder="City" />
-          <input [(ngModel)]="editing.address" name="address" placeholder="Address" />
-          <input type="number" [(ngModel)]="editing.rating" name="rating" placeholder="Rating" />
-          <textarea [(ngModel)]="editing.description" name="description" placeholder="Description"></textarea>
-          <div class="buttons">
-            <button type="submit">Save</button>
-            <button type="button" (click)="cancel()">Cancel</button>
-          </div>
-        </form>
-      </div>
-
-      <p *ngIf="message" class="message">{{message}}</p>
-      <p *ngIf="error" class="error">{{error}}</p>
-    </div>
-  `,
-  styles: [`
-    .hotel-container { padding: 20px; }
-    .actions { margin-bottom: 12px; }
-    .hotel-table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-    .form-container { margin-top: 15px; border: 1px solid #ccc; padding: 12px; width: 400px; }
-    .buttons { margin-top: 10px; }
-    .message { color: green; }
-    .error { color: red; }
-  `]
+  selector: 'app-create-hotel',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './create-hotel.component.html',
+  styleUrls: ['./create-hotel.component.css']
 })
-export class Hotel implements OnInit {
-  hotels: Hotel[] = [];
-  editing: Hotel | null = null;
+export class CreateHotelComponent {
+  hotel = {
+    hotelName: '',
+    city: '',
+    address: '',
+    rating: 0
+  };
+
+  token = ''; // येथे JWT token ठेवायचा (login नंतर localStorage मधून घेता येईल)
   message = '';
-  error = '';
-  searchText = '';
-  filterRating = 0;
 
-  constructor(private svc: Hotelservice, private router: Router) {}
+  constructor(private hotelService: HotelService, private router: Router) {}
 
-  ngOnInit() {
-    this.load();
-  }
-
-  load() {
-    this.svc.getAll().subscribe({
-      next: (res) => (this.hotels = res),
-      error: (err) => (this.error = 'Error loading hotels'),
-    });
-  }
-
-  startAdd() {
-    this.editing = { name: '', city: '', rating: 0 };
-  }
-
-  startEdit(h: Hotel) {
-    this.editing = { ...h };
-  }
-
-  cancel() {
-    this.editing = null;
-  }
-
-  save() {
-    if (!this.editing) return;
-    if (this.editing.id) {
-      this.svc.update(this.editing.id, this.editing).subscribe({
-        next: () => { this.message = 'Updated successfully'; this.load(); this.editing = null; },
-        error: () => (this.error = 'Update failed'),
-      });
-    } else {
-      this.svc.create(this.editing).subscribe({
-        next: () => { this.message = 'Added successfully'; this.load(); this.editing = null; },
-        error: () => (this.error = 'Add failed'),
-      });
+  createHotel() {
+    if (!this.hotel.hotelName || !this.hotel.city) {
+      this.message = 'Please fill all fields!';
+      return;
     }
-  }
 
-  delete(id?: number) {
-    if (!id) return;
-    if (!confirm('Are you sure to delete?')) return;
-    this.svc.delete(id).subscribe({
-      next: () => { this.message = 'Deleted'; this.load(); },
-      error: () => (this.error = 'Delete failed'),
+    this.hotelService.createHotel(this.hotel, this.token).subscribe({
+      next: (res) => {
+        this.message = 'Hotel created successfully!';
+        this.router.navigate(['/hotels']);
+      },
+      error: (err) => {
+        console.error(err);
+        this.message = 'Something went wrong!';
+      }
     });
-  }
-
-  search() {
-    if (!this.searchText) return this.load();
-    this.svc.search(this.searchText).subscribe({
-      next: (res) => (this.hotels = res),
-      error: () => (this.error = 'Search failed'),
-    });
-  }
-
-  filter() {
-    if (!this.filterRating) return this.load();
-    this.svc.filterByRating(this.filterRating).subscribe({
-      next: (res) => (this.hotels = res),
-      error: () => (this.error = 'Filter failed'),
-    });
-  }
-
-  viewRooms(hotelId?: number) {
-    if (hotelId) this.router.navigate(['/rooms'], { queryParams: { hotelId } });
   }
 }
 
 
 ---
 
-🧭 Add in app-routing.module.ts
+🪶 4️⃣ create-hotel.component.html
 
-import { Hotel } from './hotel/hotel';
+<div class="container">
+  <h2>Add New Hotel</h2>
 
-const routes: Routes = [
-  { path: 'hotels', component: Hotel },
-  // ...existing routes
+  <form (ngSubmit)="createHotel()">
+    <label>Hotel Name:</label>
+    <input type="text" [(ngModel)]="hotel.hotelName" name="hotelName" required />
+
+    <label>City:</label>
+    <input type="text" [(ngModel)]="hotel.city" name="city" required />
+
+    <label>Address:</label>
+    <input type="text" [(ngModel)]="hotel.address" name="address" required />
+
+    <label>Rating:</label>
+    <input type="number" [(ngModel)]="hotel.rating" name="rating" required />
+
+    <button type="submit">Create Hotel</button>
+  </form>
+
+  <p class="message">{{ message }}</p>
+</div>
+
+
+---
+
+🎨 5️⃣ create-hotel.component.css
+
+.container {
+  width: 400px;
+  margin: 40px auto;
+  padding: 20px;
+  border-radius: 10px;
+  background-color: #f8f9fa;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+
+button {
+  width: 100%;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.message {
+  margin-top: 15px;
+  text-align: center;
+  font-weight: 600;
+  color: green;
+}
+
+
+---
+
+🛣️ 6️⃣ Route setup (app.routes.ts)
+
+import { Routes } from '@angular/router';
+import { CreateHotelComponent } from './features/hotel/create-hotel/create-hotel.component';
+
+export const routes: Routes = [
+  { path: 'create-hotel', component: CreateHotelComponent }
 ];
 
 
 ---
 
-🧱 Add in app.module.ts
+✅ आता वापरायचं कसं:
 
-import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
-import { Hotel } from './hotel/hotel';
-import { Hotelservice } from './hotel/hotelservice';
-
-@NgModule({
-  declarations: [
-    Hotel,
-    // other components...
-  ],
-  imports: [
-    FormsModule,
-    HttpClientModule,
-    // other imports...
-  ],
-  providers: [Hotelservice],
-})
-export class AppModule {}
+1. सर्व फाइल्स तुझ्या Angular प्रोजेक्टमध्ये योग्य ठिकाणी ठेव.
 
 
----
-
-🌐 Environment setup
-
-तुझ्या src/environments/environment.ts मध्ये हे असावं:
-
-export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:8080/api'
-};
+2. app.routes.ts मध्ये route add कर.
 
 
----
-
-✅ Final Testing Steps
-
-1. Backend run करा (Spring Boot → port 8080).
+3. Backend चालू ठेव (Spring Boot port: 8080).
 
 
-2. Frontend मध्ये login करून /hotels route वर जा.
+4. Browser मध्ये जा 👉 http://localhost:4200/create-hotel.
 
 
-3. तिथे hotel list दिसेल.
-
-
-4. Add / Edit / Delete करून पाहा.
-
-
-5. Search आणि Filter चालले पाहिजेत.
+5. फॉर्म भरून “Create Hotel” क्लिक कर.
 
 
 
 
 ---
 
-हवं असेल तर मी हा hotel module तुझ्या दिलेल्या zip extract मध्ये घालून ready-to-run frontend zip बनवून देऊ का?
-(मग तुला फक्त ng serve करायचं राहील.)
+हवं का मी आता Get All Hotels List component (standalone) देऊ पुढचं step म्हणून?
+मग Create Hotel → Get All Hotels → Update → Delete असं full module पूर्ण करू.
 
