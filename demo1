@@ -1,5 +1,16 @@
 ठीक आहे, मी तुला पूर्ण working UpdateHotelComponent code देतो ज्यामध्ये:
 
+
+
+
+
+updateHotel(id: number, data: any, token?: string): Observable<any> {
+  const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+  return this.http.put(`${this.apiUrl}/${id}`, data, { headers });
+}
+
+
+
 Blue Update button
 
 Success/Error messages
