@@ -1,162 +1,161 @@
-ठीक आहे! मग मी तुला complete working UpdateHotelComponent देतो — hotelId form मध्ये नाही, फक्त बाकी fields update करता येतील, आणि manager login वरच काम करेल.
+मस्त 👌 आता बघ — हे part म्हणजे Angular frontend मधून backend ला PUT /api/hotels/{id} call करून hotel update करायचं आहे.
+मी तुला हे step-by-step आणि working code देतो 🔥
 
 
 ---
 
-1️⃣ update-hotel.component.ts
+🧩 Step 1: Folder structure
+
+frontend/
+└── src/
+    └── app/
+        └── features/
+            └── hotel/
+                └── update-hotel/
+                    ├── hotel.ts
+                    ├── hotel.html
+                    ├── hotel.css
+
+
+---
+
+🧠 Step 2: hotel.ts (Angular Component)
 
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { HotelService } from '../services/hotel.service';
+import { HttpClientModule } from '@angular/common/http';
+import { HotelService } from '../../../core/services/hotelservice';
 
 @Component({
   selector: 'app-update-hotel',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
   templateUrl: './hotel.html',
   styleUrls: ['./hotel.css']
 })
-export class UpdateHotelComponent implements OnInit {
-  hotelForm!: FormGroup;
+export class UpdateHotel implements OnInit {
+  updateForm!: FormGroup;
   hotelId!: number;
-  message: string = '';
-  isManager: boolean = false;
 
   constructor(
     private fb: FormBuilder,
-    private hotelService: HotelService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private hotelService: HotelService
   ) {}
 
   ngOnInit(): void {
-    // Check if logged-in user is manager
-    const role = localStorage.getItem('role');
-    this.isManager = role === 'MANAGER';
-
-    // Get hotelId from URL
     this.hotelId = Number(this.route.snapshot.paramMap.get('id'));
 
-    // Initialize form
-    this.hotelForm = this.fb.group({
+    this.updateForm = this.fb.group({
       name: ['', Validators.required],
       location: ['', Validators.required],
       amenities: ['', Validators.required],
-      rating: [0, [Validators.required, Validators.min(1), Validators.max(5)]]
+      rating: ['', [Validators.required, Validators.min(1), Validators.max(5)]]
     });
 
-    // Load hotel details from backend
+    // existing hotel load kar
     this.hotelService.getHotelById(this.hotelId).subscribe({
       next: (data: any) => {
-        this.hotelForm.patchValue({
-          name: data.name,
-          location: data.location,
-          amenities: data.amenities,
-          rating: data.rating
-        });
+        this.updateForm.patchValue(data);
       },
-      error: (err) => {
-        console.error(err);
-        this.message = 'Failed to load hotel details';
-      }
+      error: err => console.error('Error fetching hotel details:', err)
     });
   }
 
-  updateHotel(): void {
-    if (!this.isManager) {
-      this.message = 'Only managers can update hotels!';
-      return;
+  onUpdate() {
+    if (this.updateForm.valid) {
+      this.hotelService.updateHotel(this.hotelId, this.updateForm.value).subscribe({
+        next: () => {
+          alert('✅ Hotel updated successfully!');
+          this.router.navigate(['/hotels']);
+        },
+        error: err => {
+          console.error('Error updating hotel:', err);
+          alert('❌ Failed to update hotel!');
+        }
+      });
     }
-
-    if (this.hotelForm.invalid) {
-      this.message = 'Please fill all fields correctly';
-      return;
-    }
-
-    // Send only name, location, amenities, rating in body
-    this.hotelService.updateHotel(this.hotelId, {
-      name: this.hotelForm.value.name,
-      location: this.hotelForm.value.location,
-      amenities: this.hotelForm.value.amenities,
-      rating: this.hotelForm.value.rating
-    }).subscribe({
-      next: () => {
-        this.message = 'Hotel updated successfully!';
-        this.router.navigate(['/hotels']); // Redirect to hotel list
-      },
-      error: (err) => {
-        console.error(err);
-        this.message = 'Failed to update hotel';
-      }
-    });
   }
 }
 
 
 ---
 
-2️⃣ hotel.html
+🧩 Step 3: hotel.html
 
-<div class="container">
+<div class="update-container">
   <h2>Update Hotel</h2>
 
-  <form [formGroup]="hotelForm" (ngSubmit)="updateHotel()">
-    <label>Hotel Name:</label>
-    <input type="text" formControlName="name" />
+  <form [formGroup]="updateForm" (ngSubmit)="onUpdate()">
+    <div class="form-group">
+      <label>Hotel Name:</label>
+      <input type="text" formControlName="name" placeholder="Enter hotel name" />
+    </div>
 
-    <label>Location:</label>
-    <input type="text" formControlName="location" />
+    <div class="form-group">
+      <label>Location:</label>
+      <input type="text" formControlName="location" placeholder="Enter location" />
+    </div>
 
-    <label>Amenities:</label>
-    <input type="text" formControlName="amenities" />
+    <div class="form-group">
+      <label>Amenities:</label>
+      <input type="text" formControlName="amenities" placeholder="Enter amenities" />
+    </div>
 
-    <label>Rating (1-5):</label>
-    <input type="number" formControlName="rating" />
+    <div class="form-group">
+      <label>Rating (1–5):</label>
+      <input type="number" formControlName="rating" min="1" max="5" />
+    </div>
 
-    <button type="submit" [disabled]="!isManager">Update Hotel</button>
+    <button type="submit" [disabled]="updateForm.invalid">Update Hotel</button>
   </form>
-
-  <p class="message">{{ message }}</p>
 </div>
 
 
 ---
 
-3️⃣ hotel.css
+🧩 Step 4: hotel.css
 
-.container {
-  width: 400px;
+.update-container {
+  max-width: 450px;
   margin: 40px auto;
+  background: #f9f9f9;
   padding: 20px;
   border-radius: 10px;
-  background-color: #f8f9fa;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  box-shadow: 0px 0px 8px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  text-align: center;
+  color: #007bff;
+}
+
+.form-group {
+  margin-bottom: 15px;
 }
 
 label {
-  display: block;
-  margin-top: 10px;
-  font-weight: 600;
+  font-weight: bold;
 }
 
 input {
   width: 100%;
   padding: 8px;
-  margin-top: 5px;
-  border-radius: 5px;
+  border-radius: 6px;
   border: 1px solid #ccc;
+  margin-top: 5px;
 }
 
 button {
   width: 100%;
-  margin-top: 15px;
-  padding: 10px;
   background-color: #007bff;
   color: white;
+  padding: 10px;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
 }
 
@@ -165,61 +164,87 @@ button:disabled {
   cursor: not-allowed;
 }
 
-.message {
-  margin-top: 15px;
-  text-align: center;
-  font-weight: 600;
-  color: green;
+
+---
+
+🧩 Step 5: Update your hotelservice.ts
+
+(frontend/src/app/core/services/hotelservice.ts)
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class HotelService {
+  private apiUrl = 'http://localhost:8080/api/hotels';
+
+  constructor(private http: HttpClient) {}
+
+  getHotelList(): Observable<any> {
+    return this.http.get(this.apiUrl);
+  }
+
+  getHotelById(id: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${id}`);
+  }
+
+  updateHotel(id: number, data: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}`, data);
+  }
 }
 
 
 ---
 
-4️⃣ hotel.service.ts (Update method)
+✅ Step 6: Routing setup
 
-updateHotel(id: number, hotelData: any) {
-  const token = localStorage.getItem('token'); // JWT token saved after login
-  const headers = { Authorization: `Bearer ${token}` };
-  return this.http.put(`http://localhost:8080/api/hotels/${id}`, hotelData, { headers });
-}
+(app.routes.ts)
 
+import { Routes } from '@angular/router';
+import { CreateHotel } from './features/hotel/create-hotel/hotel';
+import GetAllHotels from './features/hotel/get-all-hotels/hotelList';
+import { UpdateHotel } from './features/hotel/update-hotel/hotel';
 
----
-
-5️⃣ Route (app.routes.ts)
-
-import { UpdateHotelComponent } from './features/hotel/update-hotel/hotel';
-
-export const routes = [
-  { path: 'update-hotel/:id', component: UpdateHotelComponent }
+export const routes: Routes = [
+  { path: 'create-hotel', component: CreateHotel },
+  { path: 'hotels', component: GetAllHotels },
+  { path: 'update-hotel/:id', component: UpdateHotel },
+  { path: '', redirectTo: '/hotels', pathMatch: 'full' }
 ];
 
 
 ---
 
-✅ Flow
+🧠 Flow Summary
 
-1. Manager login → localStorage मध्ये token आणि role=MANAGER.
-
-
-2. Browser मध्ये जा:
-
-http://localhost:4200/update-hotel/1
-
-(1 = hotelId)
+1. ✅ Manager जेव्हा “Update” वर click करेल (/update-hotel/:id route वर जाईल)
 
 
-3. Form auto-fill होईल (name, location, amenities, rating). hotelId form मध्ये नाही.
+2. Component hotel ID route मधून घेईल
 
 
-4. Manager update क्लिक → backend वर changes save होतात.
+3. Backend वरून hotel details load होतील
+
+
+4. Manager fields edit करेल आणि “Update Hotel” वर click करेल
+
+
+5. PUT request http://localhost:8080/api/hotels/{id} ला जाईल
+
+
+6. Backend hotel update करून save करेल
+
+
+7. Successfully updated झाल्यावर alert दिसेल आणि /hotels वर redirect होईल
 
 
 
 
 ---
 
-जर हवे असेल तर पुढे मी Get All Hotels + inline Update button per hotel तयार करून देऊ शकतो, जेवढं मागे तुला हवे होते.
-
-तुला मी ते पुढचं step बनवून द्यावे का?
+तू सांग — backend आधीच connected आहे का (CORS allowed आणि API चालू आहे)?
+जर आहे, तर हे code paste करून direct test करता येईल ✅
 
