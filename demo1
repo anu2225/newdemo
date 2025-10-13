@@ -1,14 +1,24 @@
-ठीक आहे! 😎 मी तुला UpdateHotel component naming convention नुसार, hotel.ts / hotel.html / hotel.css ready-to-copy देतो.
+अरे अगदी बरोबर! 😎 तुला फक्त हे हवे आहे की:
+
+/hotels page वर सर्व hotels table मध्ये दिसतील
+
+प्रत्येक row मध्ये Update button फक्त Manager साठी
+
+खाली वेगळी Update form नको, click → Update page load
+
+
+म्हणजे GetAllHotels component मध्ये फक्त table + Update button ठेवायचा आणि UpdateHotel component standalone म्हणून राहील.
 
 
 ---
 
-1️⃣ hotel.ts (UpdateHotel)
+🔹 GetAllHotels Component (Manager-only Update button)
+
+hotel.ts
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { HotelService } from '../services/hotel.service';
 
 export interface Hotel {
@@ -20,112 +30,111 @@ export interface Hotel {
 }
 
 @Component({
-  selector: 'app-update-hotel',
+  selector: 'app-hotel',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './hotel.html',
   styleUrls: ['./hotel.css']
 })
-export class UpdateHotelComponent implements OnInit {
-  hotel: Hotel = { hotelId: 0, name: '', location: '', amenities: '', rating: 0 };
-  token = localStorage.getItem('token') || '';
-  role = (localStorage.getItem('role') || '').trim().toLowerCase();
-  message = '';
+export class HotelComponent implements OnInit {
+  hotels: Hotel[] = [];
+  loading = true;
+  error = '';
+  role = '';
 
-  constructor(private hotelService: HotelService, private route: ActivatedRoute, private router: Router) {}
+  constructor(private hotelService: HotelService) {}
 
   ngOnInit(): void {
-    if (this.role !== 'manager') {
-      this.message = 'Only Manager can update hotels!';
-      return;
-    }
-
-    const id = Number(this.route.snapshot.paramMap.get('id'));
-    this.hotelService.getHotelById(id).subscribe({
-      next: (res) => this.hotel = res,
-      error: (err) => {
-        console.error(err);
-        this.message = 'Failed to fetch hotel data';
-      }
-    });
+    this.role = (localStorage.getItem('role') || '').trim().toLowerCase();
+    this.getHotels();
   }
 
-  updateHotel() {
-    if (!this.hotel.name || !this.hotel.location || !this.hotel.amenities) {
-      this.message = 'Please fill all required fields!';
-      return;
-    }
-
-    this.hotelService.updateHotel(this.hotel.hotelId, this.hotel, this.token).subscribe({
-      next: () => this.router.navigate(['/hotels']),
+  getHotels(): void {
+    this.loading = true;
+    this.hotelService.getHotelList().subscribe({
+      next: (res: Hotel[]) => {
+        this.hotels = res;
+        this.loading = false;
+      },
       error: (err) => {
         console.error(err);
-        this.message = 'Update failed!';
+        this.error = 'Failed to load hotels';
+        this.loading = false;
       }
     });
   }
 }
 
+hotel.html
 
----
+<div class="hotel-container">
+  <h2>Hotel List</h2>
 
-2️⃣ hotel.html (UpdateHotel)
+  <p *ngIf="loading">Loading hotels...</p>
+  <p *ngIf="error" style="color:red">{{ error }}</p>
 
-<div class="container">
-  <h2>Update Hotel</h2>
+  <table *ngIf="!loading && hotels.length > 0">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Location</th>
+        <th>Amenities</th>
+        <th>Rating</th>
+        <th *ngIf="role === 'manager'">Update</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let h of hotels">
+        <td>{{ h.name }}</td>
+        <td>{{ h.location }}</td>
+        <td>{{ h.amenities }}</td>
+        <td>{{ h.rating }}</td>
+        <td *ngIf="role === 'manager'">
+          <button [routerLink]="['/update-hotel', h.hotelId]">Update</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 
-  <p *ngIf="message" style="color:red">{{ message }}</p>
-
-  <form *ngIf="role === 'manager'" (ngSubmit)="updateHotel()">
-    <label>Hotel Name:</label>
-    <input type="text" [(ngModel)]="hotel.name" name="name" required />
-
-    <label>Location:</label>
-    <input type="text" [(ngModel)]="hotel.location" name="location" required />
-
-    <label>Amenities:</label>
-    <input type="text" [(ngModel)]="hotel.amenities" name="amenities" required />
-
-    <label>Rating (1-5):</label>
-    <input type="number" [(ngModel)]="hotel.rating" name="rating" min="1" max="5" required />
-
-    <button type="submit">Update Hotel</button>
-  </form>
+  <p *ngIf="!loading && hotels.length === 0">No hotels found</p>
+  <p *ngIf="role !== 'manager'">Only Manager can update hotels!</p>
 </div>
 
+hotel.css (साधे table style)
 
----
-
-3️⃣ hotel.css (UpdateHotel)
-
-.container {
-  width: 400px;
+.hotel-container {
+  width: 900px;
   margin: 40px auto;
   padding: 20px;
-  border-radius: 10px;
   background-color: #f8f9fa;
+  border-radius: 10px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
-label {
-  display: block;
-  margin-top: 10px;
-  font-weight: 600;
+h2 {
+  text-align: center;
+  color: #007bff;
 }
 
-input {
+table {
   width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border-radius: 5px;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+th, td {
   border: 1px solid #ccc;
+  padding: 10px;
+  text-align: left;
+}
+
+th {
+  background-color: #e9ecef;
 }
 
 button {
-  width: 100%;
-  margin-top: 15px;
-  padding: 10px;
-  background-color: #007bff;
+  padding: 5px 10px;
+  background-color: #28a745;
   color: white;
   border: none;
   border-radius: 5px;
@@ -133,38 +142,27 @@ button {
 }
 
 button:hover {
-  background-color: #0069d9;
+  background-color: #218838;
 }
 
 
 ---
 
-🔹 Usage
+💡 Key points
 
-1. Folder structure:
+Update button row-wise, फक्त Manager role साठी
 
+Click → /update-hotel/:id → UpdateHotel component load
 
+खाली separate Update form नको
 
-features/hotel/update-hotel/
-    hotel.ts
-    hotel.html
-    hotel.css
-
-2. Route add करा app.routes.ts मध्ये:
-
-
-
-import { UpdateHotelComponent } from './features/hotel/update-hotel/hotel';
-
-{ path: 'update-hotel/:id', component: UpdateHotelComponent }
-
-3. /hotels page → Manager click Update → UpdateHotelComponent load → prefilled form → Submit → backend update → redirect /hotels ✅
-
+Non-manager → message Only Manager can update hotels!
 
 
 
 ---
 
-तुला हवं का मी आता Delete button + full CRUD ready module सुद्धा तयार करून देऊ?
-तयार असेल तर एकदम copy-paste ready होईल.
+जर हवं तर मी Create + Get + Update + Delete सगळं full CRUD ready module तयार करून तुला देऊ शकतो, जे folder + naming convention नुसार copy-paste ready असेल 🔥
+
+तयार आहेस का?
 
