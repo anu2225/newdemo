@@ -1,82 +1,112 @@
-बापरे 🔥 — एकदम व्यवस्थित folder structure आहे तुझं 💪
-आता मी तुझ्या दिलेल्या folder structure वरून final corrected reactive form Create Hotel module तयार करून देतो.
-तुझं structure हे आहे 👇
 
-frontend/
- └── src/
-     └── app/
-         ├── features/
-         │   ├── auth/
-         │   ├── hotel/
-         │   │   ├── create-hotel/
-         │   │   │   ├── hotel.ts
-         │   │   │   ├── hotel.html
-         │   │   │   └── hotel.css
-         │   │   ├── get-all-hotels/
-         │   │   │   ├── hotel.ts
-         │   │   │   ├── hotel.html
-         │   │   │   └── hotel.css
-         │   │   └── services/
-         │   │       └── hotel.service.ts
-         │   └── user/
-         ├── app.html
-         ├── app.css
-         ├── app.config.ts
-         └── app.ts
+एकदम बरोबर ✅ — म्हणजे आता आपल्याला role-based update restriction ठेवायचा आहे (फक्त Manager user ला update करता येईल).
+
+समजलं तुझं logic:
+
+कोणताही user hotel list पाहू शकतो ✅
+
+पण update (PUT) फक्त Manager role ला करता येईल ❌ इतरांना नाही
+
 
 
 ---
 
-✅ Step-by-step Correct Setup for Create Hotel (Reactive Form)
+🔐 Step-by-step Plan for Update Hotel (with role check)
+
+1️⃣ hotel.service.ts
+
+ही file आधीच आहे पण updateHotel() method वापरतो आपण —
+
+updateHotel(id: number, data: any, token: string): Observable<any> {
+  const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+  return this.http.put(`${this.apiUrl}/${id}`, data, { headers });
+}
+
+2️⃣ आता नवीन folder तयार कर:
+
+src/app/features/hotel/update-hotel/
+ ├── hotel.ts
+ ├── hotel.html
+ └── hotel.css
 
 
 ---
 
-🧩 1️⃣ File: hotel.ts
+🧩 File 1️⃣ — hotel.ts (Reactive Form + Role Check)
 
-📍Path: src/app/features/hotel/create-hotel/hotel.ts
-
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HotelService } from '../services/hotel.service';
 
 @Component({
-  selector: 'app-create-hotel',
+  selector: 'app-update-hotel',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './hotel.html',
   styleUrls: ['./hotel.css']
 })
-export class CreateHotel {
-  hotelForm: FormGroup;
+export class UpdateHotel implements OnInit {
+  hotelForm!: FormGroup;
   message = '';
+  hotelId!: number;
+  userRole = ''; // user role (e.g. 'Manager', 'Customer', etc.)
 
-  constructor(private fb: FormBuilder, private hotelService: HotelService, private router: Router) {
+  constructor(
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private hotelService: HotelService,
+    private router: Router
+  ) {}
+
+  ngOnInit() {
+    // form setup
     this.hotelForm = this.fb.group({
       name: ['', Validators.required],
       location: ['', Validators.required],
       amenities: ['', Validators.required],
       rating: [null, [Validators.required, Validators.max(5)]]
     });
+
+    // role localStorage मधून घ्या (login नंतर store केलेला असेल)
+    this.userRole = localStorage.getItem('role') || '';
+
+    // URL मधून hotel id घ्या
+    this.hotelId = Number(this.route.snapshot.paramMap.get('id'));
+
+    // डेटा लोड करा
+    this.hotelService.getHotelById(this.hotelId).subscribe({
+      next: (res) => {
+        this.hotelForm.patchValue(res);
+      },
+      error: (err) => {
+        console.error(err);
+        this.message = 'Failed to load hotel details!';
+      }
+    });
   }
 
   onSubmit() {
+    if (this.userRole !== 'Manager') {
+      this.message = 'Only Manager can update hotels!';
+      return;
+    }
+
     if (this.hotelForm.invalid) {
       this.message = 'Please fill all fields correctly!';
       return;
     }
 
     const token = localStorage.getItem('token') || '';
-    this.hotelService.createHotel(this.hotelForm.value, token).subscribe({
+    this.hotelService.updateHotel(this.hotelId, this.hotelForm.value, token).subscribe({
       next: (res) => {
-        this.message = 'Hotel created successfully!';
+        this.message = 'Hotel updated successfully!';
         this.router.navigate(['/hotels']);
       },
       error: (err) => {
         console.error(err);
-        this.message = 'Something went wrong while creating hotel!';
+        this.message = 'Something went wrong while updating hotel!';
       }
     });
   }
@@ -85,12 +115,10 @@ export class CreateHotel {
 
 ---
 
-🪶 2️⃣ File: hotel.html
-
-📍Path: src/app/features/hotel/create-hotel/hotel.html
+🪶 File 2️⃣ — hotel.html
 
 <div class="container">
-  <h2>Add New Hotel</h2>
+  <h2>Update Hotel</h2>
 
   <form [formGroup]="hotelForm" (ngSubmit)="onSubmit()">
     <label>Hotel Name:</label>
@@ -105,7 +133,7 @@ export class CreateHotel {
     <label>Rating (1-5):</label>
     <input type="number" formControlName="rating" />
 
-    <button type="submit">Create Hotel</button>
+    <button type="submit">Update Hotel</button>
   </form>
 
   <p class="message">{{ message }}</p>
@@ -114,9 +142,7 @@ export class CreateHotel {
 
 ---
 
-🎨 3️⃣ File: hotel.css
-
-📍Path: src/app/features/hotel/create-hotel/hotel.css
+🎨 File 3️⃣ — hotel.css
 
 .container {
   width: 400px;
@@ -145,5 +171,45 @@ input {
   border: 1px solid #ccc;
 }
 
-button
+button {
+  width: 100%;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.message {
+  margin-top: 15px;
+  text-align: center;
+  font-weight: 600;
+  color: green;
+}
+
+
+---
+
+🛣️ Add route (in app.routes.ts)
+
+import { UpdateHotel } from './features/hotel/update-hotel/hotel';
+
+export const routes: Routes = [
+  { path: 'update-hotel/:id', component: UpdateHotel }
+];
+
+
+---
+
+✅ आता जर user कडे role Manager असेल (stored in localStorage.role),
+→ तो update करू शकेल.
+🚫 अन्य role असेल (e.g. Customer, Admin),
+→ message दिसेल: "Only Manager can update hotels!"
+
+
+---
+
+तयार का मग पुढचं step घेऊ — Delete Hotel (role-based access + confirmation popup)?
 
