@@ -213,3 +213,27 @@ export const routes: Routes = [
 
 तयार का मग पुढचं step घेऊ — Delete Hotel (role-based access + confirmation popup)?
 
+
+
+
+
+
+
+
+
+import { Routes } from '@angular/router';
+
+// Hotel components
+import { CreateHotel } from './features/hotel/create-hotel/hotel';
+import { GetAllHotels } from './features/hotel/get-all-hotels/hotelList';
+import { UpdateHotel } from './features/hotel/update-hotel/hotel';
+
+export const routes: Routes = [
+  { path: '', redirectTo: '/create-hotel', pathMatch: 'full' },
+  { path: 'create-hotel', component: CreateHotel },
+  { path: 'hotels', component: GetAllHotels },
+  { path: 'update-hotel/:id', component: UpdateHotel }
+];
+
+
+
