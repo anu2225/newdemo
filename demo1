@@ -1,13 +1,20 @@
-ठीक आहे 🔥 — मी तुला दिलेल्या messy code वरून proper, clean, fully working Angular frontend module तयार करून देतो.
+ठीक आहे! 🔥
 
-तुमच्या requirements नुसार हा Get All Hotels component आहे, role-based Update button साठी ready, reactive-friendly, typesafe.
+मी तुला आता full proper working GetAllHotels component तयार करून देतो जे:
+
+सर्व hotels list show करेल
+
+Update button प्रत्येक hotel row समोर दिसेल (Manager role check included)
+
+Token + role logic included
+
+Clean TypeScript + Angular standalone component style
+
 
 
 ---
 
-1️⃣ File: hotel.ts
-
-📍 Path: src/app/features/hotel/get-all-hotels/hotel.ts
+1️⃣ hotel.ts (GetAllHotels component)
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -34,15 +41,15 @@ export class HotelComponent implements OnInit {
   hotels: Hotel[] = [];
   loading = true;
   error = '';
-  role = ''; // user role from localStorage
+  role = ''; // user role
 
   constructor(private hotelService: HotelService) {}
 
   ngOnInit(): void {
-    // role assign
-    this.role = localStorage.getItem('role') || '';
+    // fetch role from localStorage and normalize
+    this.role = (localStorage.getItem('role') || '').trim().toLowerCase();
 
-    // get hotels
+    // fetch hotels
     this.getHotels();
   }
 
@@ -50,7 +57,7 @@ export class HotelComponent implements OnInit {
     this.loading = true;
     this.hotelService.getHotelList().subscribe({
       next: (response: Hotel[]) => {
-        console.log("Fetched hotels:", response);
+        console.log("Hotels fetched:", response);
         this.hotels = response;
         this.loading = false;
       },
@@ -66,25 +73,22 @@ export class HotelComponent implements OnInit {
 
 ---
 
-2️⃣ File: hotel.html
-
-📍 Path: src/app/features/hotel/get-all-hotels/hotel.html
+2️⃣ hotel.html
 
 <div class="hotel-container">
   <h2>Hotel List</h2>
-  <button class="display" (click)="getHotels()">Display Hotels</button>
 
-  <p *ngIf="loading">Loading...</p>
+  <p *ngIf="loading">Loading hotels...</p>
   <p *ngIf="error" style="color:red">{{ error }}</p>
 
   <table *ngIf="!loading && hotels.length > 0">
     <thead>
       <tr>
-        <th>Hotel Name</th>
+        <th>Name</th>
         <th>Location</th>
         <th>Amenities</th>
         <th>Rating</th>
-        <th *ngIf="role === 'Manager'">Actions</th>
+        <th *ngIf="role === 'manager'">Actions</th>
       </tr>
     </thead>
     <tbody>
@@ -93,7 +97,7 @@ export class HotelComponent implements OnInit {
         <td>{{ h.location }}</td>
         <td>{{ h.amenities }}</td>
         <td>{{ h.rating }}</td>
-        <td *ngIf="role === 'Manager'">
+        <td *ngIf="role === 'manager'">
           <button [routerLink]="['/update-hotel', h.hotelId]">Update</button>
         </td>
       </tr>
@@ -106,37 +110,26 @@ export class HotelComponent implements OnInit {
 
 ---
 
-3️⃣ File: hotel.css
-
-📍 Path: src/app/features/hotel/get-all-hotels/hotel.css
+3️⃣ hotel.css
 
 .hotel-container {
-  padding: 20px;
   width: 800px;
   margin: 40px auto;
+  padding: 20px;
   background-color: #f8f9fa;
   border-radius: 10px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 h2 {
-  color: #007bff;
   text-align: center;
-}
-
-button.display {
-  margin-bottom: 15px;
-  padding: 8px 12px;
-  background-color: #007bff;
-  border: none;
-  border-radius: 5px;
-  color: white;
-  cursor: pointer;
+  color: #007bff;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 20px;
 }
 
 th, td {
@@ -151,53 +144,66 @@ th {
 
 button {
   padding: 5px 10px;
-  border-radius: 5px;
-  border: none;
   background-color: #28a745;
   color: white;
+  border: none;
+  border-radius: 5px;
   cursor: pointer;
+}
+
+button:hover {
+  background-color: #218838;
 }
 
 
 ---
 
-🔑 Highlights
+🔑 Key Points
 
-1. Role-based Update button:
-
-*ngIf="role === 'Manager'"
-
-→ फक्त Manager ला update button दिसेल.
+1. Update button प्रत्येक row मध्ये visible (Manager role only).
 
 
-2. Proper interface Hotel — reactive forms friendly, clean typing.
+2. Role check robust — localStorage.getItem('role')?.trim().toLowerCase()
 
 
-3. Loading & Error handling included.
+3. Hotels fetched from backend via HotelService.getHotelList().
 
 
-4. Standalone component imports: CommonModule + RouterModule
+4. Loading + error handling included.
 
 
-5. Console log to verify response:
-
-console.log("Fetched hotels:", response);
+5. Standalone component — just import into routes.
 
 
 
 
 ---
 
-💡 Next Step Suggestion:
+🔄 Usage
 
-ह्या component मधून Delete Hotel button add करून role-based delete करू शकतो.
+1. Ensure login sets role:
 
-मग Create + GetAll + Update + Delete + Routing + Role access → Full CRUD module ready.
+
+
+localStorage.setItem('role', 'Manager');
+localStorage.setItem('token', 'JWT_TOKEN_HERE');
+
+2. Route in app.routes.ts:
+
+
+
+import { HotelComponent } from './features/hotel/get-all-hotels/hotel';
+
+{ path: 'hotels', component: HotelComponent }
+
+3. Browser → /hotels → प्रत्येक hotel समोर Update button दिसेल.
+
 
 
 
 ---
 
-मी हवं तर तुला Delete Hotel feature integrated version सुद्धा तयार करून देऊ शकतो.
-देऊ का?
+जर तू हवं तर मी आता Delete button सुद्धा add करून full CRUD ready version देऊ शकतो 🔥
+
+तू Delete feature साठी तयार आहेस का?
 
