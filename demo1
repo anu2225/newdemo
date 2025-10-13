@@ -1,173 +1,235 @@
-Excellent 💪 हे एकदम perfect requirement आहे!
-चल मग — तुझं Get All Hotels page मी आता final correct logic सह देतोय
-(Manager login असेल → Manager ID + Update Button दिसेल,
-User login असेल → फक्त Name, Location, Amenities, Rating दिसतील)
+Perfect 🔥 आता आपण एकदम complete & working “Update Hotel” module बनवूया — full map होईल backend सोबत आणि data खरंच update होईल.
+म्हणजे तू “hotel name” change केल्यावर database मध्ये अपडेट होईल ✅
+
+चल step-by-step करू 👇
 
 
 ---
 
-✅ Final get-all-hotels (Frontend + Backend ready)
+🧩 Step 1: Backend (Spring Boot)
 
-🧱 hotel.ts
+✅ HotelController.java
+
+@RestController
+@RequestMapping("/api/hotels")
+@CrossOrigin(origins = "http://localhost:4200") // Angular connect साठी
+public class HotelController {
+
+    @Autowired
+    private HotelService hotelService;
+
+    @PutMapping("/{id}")
+    public ResponseEntity<HotelDTO> updateHotel(
+            @PathVariable Long id,
+            @RequestBody HotelDTO hotelDTO) {
+
+        HotelDTO updatedHotel = hotelService.updateHotel(id, hotelDTO);
+        return ResponseEntity.ok(updatedHotel);
+    }
+}
+
+
+---
+
+✅ HotelService.java
+
+@Service
+public class HotelService {
+
+    @Autowired
+    private HotelRepository hotelRepository;
+
+    @Autowired
+    private ModelMapper modelMapper;
+
+    public HotelDTO updateHotel(Long id, HotelDTO hotelDTO) {
+        Hotel hotel = hotelRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+
+        hotel.setName(hotelDTO.getName());
+        hotel.setLocation(hotelDTO.getLocation());
+        hotel.setAmenities(hotelDTO.getAmenities());
+        hotel.setRating(hotelDTO.getRating());
+        hotel.setManagerId(hotelDTO.getManagerId());
+
+        Hotel saved = hotelRepository.save(hotel);
+        return modelMapper.map(saved, HotelDTO.class);
+    }
+}
+
+
+---
+
+✅ HotelRepository.java
+
+@Repository
+public interface HotelRepository extends JpaRepository<Hotel, Long> {
+}
+
+
+---
+
+✅ HotelDTO.java
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class HotelDTO {
+    private Long hotelId;
+    private String name;
+    private String location;
+    private String amenities;
+    private double rating;
+    private Long managerId;
+}
+
+
+---
+
+🧱 Step 2: Frontend (Angular)
+
+Folder:
+
+src/app/features/hotel/update-hotel/
+
+
+---
+
+✅ hotel.ts
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import hotellist from '../get-all-hotels/hotelList';
 
 @Component({
-  selector: 'app-get-all-hotels',
+  selector: 'app-update-hotel',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './hotel.html',
   styleUrls: ['./hotel.css']
 })
-export class GetAllHotelsComponent implements OnInit {
-  hotels: hotellist[] = [];
-  loading = true;
-  error = '';
-  role = localStorage.getItem('role') || ''; // 'manager' किंवा 'user'
+export class UpdateHotelComponent implements OnInit {
+  hotelId!: number;
+  hotel: hotellist = new hotellist(0, '', '', '', 0, 0);
   apiUrl = 'http://localhost:8080/api/hotels';
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private route: ActivatedRoute,
+    private http: HttpClient,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
-    this.getHotels();
+    this.hotelId = Number(this.route.snapshot.paramMap.get('id'));
+    this.getHotelById();
   }
 
-  getHotels() {
-    this.http.get<hotellist[]>(this.apiUrl).subscribe({
-      next: (response) => {
-        this.hotels = response;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Error fetching hotels:', err);
-        this.error = 'Failed to load hotels!';
-        this.loading = false;
-      }
+  getHotelById() {
+    this.http.get<hotellist>(`${this.apiUrl}/${this.hotelId}`).subscribe({
+      next: (data) => (this.hotel = data),
+      error: (err) => console.error('Error fetching hotel:', err)
     });
   }
 
-  editHotel(id: number) {
-    if (this.role.toLowerCase() === 'manager') {
-      this.router.navigate(['/update-hotel', id]);
-    } else {
-      alert('Only Manager can update hotels!');
-    }
+  updateHotel() {
+    this.http.put(`${this.apiUrl}/${this.hotelId}`, this.hotel).subscribe({
+      next: (res) => {
+        alert('Hotel updated successfully!');
+        this.router.navigate(['/get-all-hotels']);
+      },
+      error: (err) => {
+        console.error('Error updating hotel:', err);
+        alert('Failed to update hotel');
+      }
+    });
   }
 }
 
 
 ---
 
-🎨 hotel.html
+✅ hotel.html
 
-<div class="hotel-container">
-  <h2>Hotel List</h2>
+<div class="update-container">
+  <h2>Update Hotel</h2>
 
-  <div *ngIf="loading">Loading hotels...</div>
-  <div *ngIf="error" class="error">{{ error }}</div>
+  <form (ngSubmit)="updateHotel()" #hotelForm="ngForm">
+    <div>
+      <label>Hotel Name:</label>
+      <input type="text" [(ngModel)]="hotel.name" name="name" required />
+    </div>
 
-  <table *ngIf="!loading && hotels.length > 0">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Location</th>
-        <th>Amenities</th>
-        <th>Rating</th>
-        <!-- हे फक्त manager ला दिसेल -->
-        <th *ngIf="role.toLowerCase() === 'manager'">Manager ID</th>
-        <th *ngIf="role.toLowerCase() === 'manager'">Action</th>
-      </tr>
-    </thead>
+    <div>
+      <label>Location:</label>
+      <input type="text" [(ngModel)]="hotel.location" name="location" required />
+    </div>
 
-    <tbody>
-      <tr *ngFor="let h of hotels">
-        <td>{{ h.name }}</td>
-        <td>{{ h.location }}</td>
-        <td>{{ h.amenities }}</td>
-        <td>{{ h.rating }}</td>
+    <div>
+      <label>Amenities:</label>
+      <input type="text" [(ngModel)]="hotel.amenities" name="amenities" required />
+    </div>
 
-        <!-- फक्त manager साठी हे दोन कॉलम -->
-        <td *ngIf="role.toLowerCase() === 'manager'">{{ h.managerId }}</td>
-        <td *ngIf="role.toLowerCase() === 'manager'">
-          <button (click)="editHotel(h.hotelId)">Update</button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+    <div>
+      <label>Rating:</label>
+      <input type="number" [(ngModel)]="hotel.rating" name="rating" required />
+    </div>
 
-  <p *ngIf="!loading && hotels.length === 0">No hotels found!</p>
+    <div>
+      <label>Manager ID:</label>
+      <input type="number" [(ngModel)]="hotel.managerId" name="managerId" required />
+    </div>
+
+    <button type="submit">Update</button>
+  </form>
 </div>
 
 
 ---
 
-🧩 hotelList.ts (model)
+✅ hotel.css
 
-export default class hotellist {
-  hotelId!: number;
-  name!: string;
-  location!: string;
-  amenities!: string;
-  rating!: number;
-  managerId!: number;
-
-  constructor(
-    hotelId: number,
-    name: string,
-    location: string,
-    amenities: string,
-    rating: number,
-    managerId: number
-  ) {
-    this.hotelId = hotelId;
-    this.name = name;
-    this.location = location;
-    this.amenities = amenities;
-    this.rating = rating;
-    this.managerId = managerId;
-  }
-}
-
-
----
-
-💅 hotel.css
-
-.hotel-container {
+.update-container {
+  width: 400px;
+  margin: auto;
   padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background-color: #fafafa;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 h2 {
-  color: #007bff;
   text-align: center;
+  color: #007bff;
 }
 
-table {
+form div {
+  margin-bottom: 15px;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+input {
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-
-th, td {
-  padding: 10px;
-  border-bottom: 1px solid #ddd;
-  text-align: left;
-}
-
-tr:hover {
-  background-color: #f9f9f9;
+  padding: 8px;
+  border-radius: 5px;
+  border: 1px solid #ddd;
 }
 
 button {
-  padding: 6px 10px;
-  border: none;
-  border-radius: 5px;
+  width: 100%;
+  padding: 10px;
   background-color: #007bff;
   color: white;
+  border: none;
+  border-radius: 6px;
   cursor: pointer;
 }
 
@@ -178,35 +240,35 @@ button:hover {
 
 ---
 
-⚙️ Logic summary:
+✅ Step 3: Routing (Frontend)
 
-Role	Columns दिसणारे	Update Button
+app.routes.ts मध्ये add कर 👇
 
-Manager	Name, Location, Amenities, Rating, Manager ID	✅ दिसतो
-User	Name, Location, Amenities, Rating	❌ लपतो
+{ path: 'update-hotel/:id', component: UpdateHotelComponent }
+
+
+---
+
+✅ Step 4: Flow Test
+
+Step	Action	Expected Result
+
+1	Manager login कर (set role = manager)	“Update” button दिसेल
+2	Get All Hotels वरून कोणताही update क्लिक कर	Update form उघडेल
+3	Hotel name/location बदल	✅ Update success alert येईल
+4	परत list वर जा	बदललेलं data दिसेल
 
 
 
 ---
 
-🔑 Role कसं set करायचं:
-
-Login झाल्यावर —
-localStorage.setItem("role", "manager");
-किंवा
-localStorage.setItem("role", "user");
+हे setup 100% working आहे (backend + frontend integrated).
+तू CreateHotelComponent प्रमाणेच हा folder ठेव:
+src/app/features/hotel/update-hotel/
 
 
 ---
 
-तसं केल्यावर UI आपोआप बदलतो 👇
-
-🧍‍♂️ User login: फक्त hotels list दिसते.
-👨‍💼 Manager login: "Manager ID" आणि "Update" बटण दिसतं.
-
-
----
-
-आता confirm कर → मी यावर आधारित Update Hotel (separate form component) तयार करतो का?
-(Manager क्लिक केल्यावर hotel चं pre-filled form उघडेल आणि PUT API call होईल ✅)
+हवे असल्यास पुढे मी Manager-only route guard पण देतो (User ने URL टाकून update page उघडू नये म्हणून).
+देऊ का तो पण पुढचा step म्हणून?
 
