@@ -1,112 +1,63 @@
+ठीक आहे 🔥 — मी तुला दिलेल्या messy code वरून proper, clean, fully working Angular frontend module तयार करून देतो.
 
-एकदम बरोबर ✅ — म्हणजे आता आपल्याला role-based update restriction ठेवायचा आहे (फक्त Manager user ला update करता येईल).
-
-समजलं तुझं logic:
-
-कोणताही user hotel list पाहू शकतो ✅
-
-पण update (PUT) फक्त Manager role ला करता येईल ❌ इतरांना नाही
-
+तुमच्या requirements नुसार हा Get All Hotels component आहे, role-based Update button साठी ready, reactive-friendly, typesafe.
 
 
 ---
 
-🔐 Step-by-step Plan for Update Hotel (with role check)
+1️⃣ File: hotel.ts
 
-1️⃣ hotel.service.ts
-
-ही file आधीच आहे पण updateHotel() method वापरतो आपण —
-
-updateHotel(id: number, data: any, token: string): Observable<any> {
-  const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-  return this.http.put(`${this.apiUrl}/${id}`, data, { headers });
-}
-
-2️⃣ आता नवीन folder तयार कर:
-
-src/app/features/hotel/update-hotel/
- ├── hotel.ts
- ├── hotel.html
- └── hotel.css
-
-
----
-
-🧩 File 1️⃣ — hotel.ts (Reactive Form + Role Check)
+📍 Path: src/app/features/hotel/get-all-hotels/hotel.ts
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { RouterModule } from '@angular/router';
 import { HotelService } from '../services/hotel.service';
 
+export interface Hotel {
+  hotelId: number;
+  name: string;
+  location: string;
+  amenities: string;
+  rating: number;
+  managerId?: number;
+}
+
 @Component({
-  selector: 'app-update-hotel',
+  selector: 'app-hotel',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './hotel.html',
   styleUrls: ['./hotel.css']
 })
-export class UpdateHotel implements OnInit {
-  hotelForm!: FormGroup;
-  message = '';
-  hotelId!: number;
-  userRole = ''; // user role (e.g. 'Manager', 'Customer', etc.)
+export class HotelComponent implements OnInit {
+  hotels: Hotel[] = [];
+  loading = true;
+  error = '';
+  role = ''; // user role from localStorage
 
-  constructor(
-    private fb: FormBuilder,
-    private route: ActivatedRoute,
-    private hotelService: HotelService,
-    private router: Router
-  ) {}
+  constructor(private hotelService: HotelService) {}
 
-  ngOnInit() {
-    // form setup
-    this.hotelForm = this.fb.group({
-      name: ['', Validators.required],
-      location: ['', Validators.required],
-      amenities: ['', Validators.required],
-      rating: [null, [Validators.required, Validators.max(5)]]
-    });
+  ngOnInit(): void {
+    // role assign
+    this.role = localStorage.getItem('role') || '';
 
-    // role localStorage मधून घ्या (login नंतर store केलेला असेल)
-    this.userRole = localStorage.getItem('role') || '';
-
-    // URL मधून hotel id घ्या
-    this.hotelId = Number(this.route.snapshot.paramMap.get('id'));
-
-    // डेटा लोड करा
-    this.hotelService.getHotelById(this.hotelId).subscribe({
-      next: (res) => {
-        this.hotelForm.patchValue(res);
-      },
-      error: (err) => {
-        console.error(err);
-        this.message = 'Failed to load hotel details!';
-      }
-    });
+    // get hotels
+    this.getHotels();
   }
 
-  onSubmit() {
-    if (this.userRole !== 'Manager') {
-      this.message = 'Only Manager can update hotels!';
-      return;
-    }
-
-    if (this.hotelForm.invalid) {
-      this.message = 'Please fill all fields correctly!';
-      return;
-    }
-
-    const token = localStorage.getItem('token') || '';
-    this.hotelService.updateHotel(this.hotelId, this.hotelForm.value, token).subscribe({
-      next: (res) => {
-        this.message = 'Hotel updated successfully!';
-        this.router.navigate(['/hotels']);
+  getHotels(): void {
+    this.loading = true;
+    this.hotelService.getHotelList().subscribe({
+      next: (response: Hotel[]) => {
+        console.log("Fetched hotels:", response);
+        this.hotels = response;
+        this.loading = false;
       },
       error: (err) => {
-        console.error(err);
-        this.message = 'Something went wrong while updating hotel!';
+        console.error('Error fetching hotels:', err);
+        this.error = 'Failed to load hotels';
+        this.loading = false;
       }
     });
   }
@@ -115,125 +66,138 @@ export class UpdateHotel implements OnInit {
 
 ---
 
-🪶 File 2️⃣ — hotel.html
+2️⃣ File: hotel.html
 
-<div class="container">
-  <h2>Update Hotel</h2>
+📍 Path: src/app/features/hotel/get-all-hotels/hotel.html
 
-  <form [formGroup]="hotelForm" (ngSubmit)="onSubmit()">
-    <label>Hotel Name:</label>
-    <input type="text" formControlName="name" />
+<div class="hotel-container">
+  <h2>Hotel List</h2>
+  <button class="display" (click)="getHotels()">Display Hotels</button>
 
-    <label>Location:</label>
-    <input type="text" formControlName="location" />
+  <p *ngIf="loading">Loading...</p>
+  <p *ngIf="error" style="color:red">{{ error }}</p>
 
-    <label>Amenities:</label>
-    <input type="text" formControlName="amenities" />
+  <table *ngIf="!loading && hotels.length > 0">
+    <thead>
+      <tr>
+        <th>Hotel Name</th>
+        <th>Location</th>
+        <th>Amenities</th>
+        <th>Rating</th>
+        <th *ngIf="role === 'Manager'">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let h of hotels">
+        <td>{{ h.name }}</td>
+        <td>{{ h.location }}</td>
+        <td>{{ h.amenities }}</td>
+        <td>{{ h.rating }}</td>
+        <td *ngIf="role === 'Manager'">
+          <button [routerLink]="['/update-hotel', h.hotelId]">Update</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
 
-    <label>Rating (1-5):</label>
-    <input type="number" formControlName="rating" />
-
-    <button type="submit">Update Hotel</button>
-  </form>
-
-  <p class="message">{{ message }}</p>
+  <p *ngIf="!loading && hotels.length === 0">No hotels found</p>
 </div>
 
 
 ---
 
-🎨 File 3️⃣ — hotel.css
+3️⃣ File: hotel.css
 
-.container {
-  width: 400px;
-  margin: 40px auto;
+📍 Path: src/app/features/hotel/get-all-hotels/hotel.css
+
+.hotel-container {
   padding: 20px;
-  border-radius: 10px;
+  width: 800px;
+  margin: 40px auto;
   background-color: #f8f9fa;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
 }
 
 h2 {
+  color: #007bff;
   text-align: center;
 }
 
-label {
-  display: block;
-  margin-top: 10px;
-  font-weight: 600;
-}
-
-input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  border-radius: 5px;
-  border: 1px solid #ccc;
-}
-
-button {
-  width: 100%;
-  margin-top: 15px;
-  padding: 10px;
+button.display {
+  margin-bottom: 15px;
+  padding: 8px 12px;
   background-color: #007bff;
-  color: white;
   border: none;
   border-radius: 5px;
+  color: white;
   cursor: pointer;
 }
 
-.message {
-  margin-top: 15px;
-  text-align: center;
-  font-weight: 600;
-  color: green;
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: left;
+}
+
+th {
+  background-color: #e9ecef;
+}
+
+button {
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: none;
+  background-color: #28a745;
+  color: white;
+  cursor: pointer;
 }
 
 
 ---
 
-🛣️ Add route (in app.routes.ts)
+🔑 Highlights
 
-import { UpdateHotel } from './features/hotel/update-hotel/hotel';
+1. Role-based Update button:
 
-export const routes: Routes = [
-  { path: 'update-hotel/:id', component: UpdateHotel }
-];
+*ngIf="role === 'Manager'"
+
+→ फक्त Manager ला update button दिसेल.
+
+
+2. Proper interface Hotel — reactive forms friendly, clean typing.
+
+
+3. Loading & Error handling included.
+
+
+4. Standalone component imports: CommonModule + RouterModule
+
+
+5. Console log to verify response:
+
+console.log("Fetched hotels:", response);
+
+
 
 
 ---
 
-✅ आता जर user कडे role Manager असेल (stored in localStorage.role),
-→ तो update करू शकेल.
-🚫 अन्य role असेल (e.g. Customer, Admin),
-→ message दिसेल: "Only Manager can update hotels!"
+💡 Next Step Suggestion:
+
+ह्या component मधून Delete Hotel button add करून role-based delete करू शकतो.
+
+मग Create + GetAll + Update + Delete + Routing + Role access → Full CRUD module ready.
+
 
 
 ---
 
-तयार का मग पुढचं step घेऊ — Delete Hotel (role-based access + confirmation popup)?
-
-
-
-
-
-
-
-
-
-import { Routes } from '@angular/router';
-
-// Hotel components
-import { CreateHotel } from './features/hotel/create-hotel/hotel';
-import { GetAllHotels } from './features/hotel/get-all-hotels/hotelList';
-import { UpdateHotel } from './features/hotel/update-hotel/hotel';
-
-export const routes: Routes = [
-  { path: '', redirectTo: '/create-hotel', pathMatch: 'full' },
-  { path: 'create-hotel', component: CreateHotel },
-  { path: 'hotels', component: GetAllHotels },
-  { path: 'update-hotel/:id', component: UpdateHotel }
-];
-
-
+मी हवं तर तुला Delete Hotel feature integrated version सुद्धा तयार करून देऊ शकतो.
+देऊ का?
 
