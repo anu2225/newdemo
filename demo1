@@ -1,58 +1,14 @@
-Perfect ✅ म्हणजे तुझ्याकडे आता folder structure असं दिसतंय:
-
-frontend > SmartHotelBookingSystem > src > app > features > hotel > get-all-hotels
-│
-├── hotel.ts        ✅ (component logic)
-├── hotel.html      ✅ (template)
-├── hotel.css       ✅ (style)
-└── hotelList.ts    ✅ (model class)
-
-हे अगदी बरोबर आहे 👏
-आता खालील दोन गोष्टी confirm कर:
+Excellent 💪 हे एकदम perfect requirement आहे!
+चल मग — तुझं Get All Hotels page मी आता final correct logic सह देतोय
+(Manager login असेल → Manager ID + Update Button दिसेल,
+User login असेल → फक्त Name, Location, Amenities, Rating दिसतील)
 
 
 ---
 
-🔹 Step 1: app.routes.ts मध्ये हा route add आहे का?
+✅ Final get-all-hotels (Frontend + Backend ready)
 
-> नसेल तर हा route नक्की टाक ⬇️
-
-
-
-import { Routes } from '@angular/router';
-import { GetAllHotelsComponent } from './features/hotel/get-all-hotels/hotel';
-
-export const routes: Routes = [
-  { path: 'hotels', component: GetAllHotelsComponent },
-  { path: '', redirectTo: '/hotels', pathMatch: 'full' }
-];
-
-
----
-
-🔹 Step 2: main.ts मध्ये routes connect आहेत का?
-
-> जर standalone app असेल तर असं असायला हवं 👇
-
-
-
-import { bootstrapApplication } from '@angular/platform-browser';
-import { AppComponent } from './app';
-import { provideRouter } from '@angular/router';
-import { routes } from './app.routes';
-import { provideHttpClient } from '@angular/common/http';
-
-bootstrapApplication(AppComponent, {
-  providers: [provideRouter(routes), provideHttpClient()]
-});
-
-
----
-
-🔹 Step 3: आता hotel.ts (component logic)
-
-तू आधीच ठेवलेला file replace करून खालील code टाक 👇
-(हा backend शी connect होतो आणि manager असल्यास update button दाखवतो)
+🧱 hotel.ts
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -71,7 +27,7 @@ export class GetAllHotelsComponent implements OnInit {
   hotels: hotellist[] = [];
   loading = true;
   error = '';
-  role = localStorage.getItem('role') || ''; // manager or user
+  role = localStorage.getItem('role') || ''; // 'manager' किंवा 'user'
   apiUrl = 'http://localhost:8080/api/hotels';
 
   constructor(private http: HttpClient, private router: Router) {}
@@ -106,7 +62,7 @@ export class GetAllHotelsComponent implements OnInit {
 
 ---
 
-🔹 Step 4: hotel.html
+🎨 hotel.html
 
 <div class="hotel-container">
   <h2>Hotel List</h2>
@@ -117,24 +73,25 @@ export class GetAllHotelsComponent implements OnInit {
   <table *ngIf="!loading && hotels.length > 0">
     <thead>
       <tr>
-        <th>Hotel ID</th>
         <th>Name</th>
         <th>Location</th>
         <th>Amenities</th>
         <th>Rating</th>
-        <th>Manager ID</th>
+        <!-- हे फक्त manager ला दिसेल -->
+        <th *ngIf="role.toLowerCase() === 'manager'">Manager ID</th>
         <th *ngIf="role.toLowerCase() === 'manager'">Action</th>
       </tr>
     </thead>
 
     <tbody>
       <tr *ngFor="let h of hotels">
-        <td>{{ h.hotelId }}</td>
         <td>{{ h.name }}</td>
         <td>{{ h.location }}</td>
         <td>{{ h.amenities }}</td>
         <td>{{ h.rating }}</td>
-        <td>{{ h.managerId }}</td>
+
+        <!-- फक्त manager साठी हे दोन कॉलम -->
+        <td *ngIf="role.toLowerCase() === 'manager'">{{ h.managerId }}</td>
         <td *ngIf="role.toLowerCase() === 'manager'">
           <button (click)="editHotel(h.hotelId)">Update</button>
         </td>
@@ -148,7 +105,7 @@ export class GetAllHotelsComponent implements OnInit {
 
 ---
 
-🔹 Step 5: hotelList.ts (Model)
+🧩 hotelList.ts (model)
 
 export default class hotellist {
   hotelId!: number;
@@ -158,7 +115,14 @@ export default class hotellist {
   rating!: number;
   managerId!: number;
 
-  constructor(hotelId: number, name: string, location: string, amenities: string, rating: number, managerId: number) {
+  constructor(
+    hotelId: number,
+    name: string,
+    location: string,
+    amenities: string,
+    rating: number,
+    managerId: number
+  ) {
     this.hotelId = hotelId;
     this.name = name;
     this.location = location;
@@ -171,7 +135,7 @@ export default class hotellist {
 
 ---
 
-🔹 Step 6: hotel.css
+💅 hotel.css
 
 .hotel-container {
   padding: 20px;
@@ -191,6 +155,7 @@ table {
 th, td {
   padding: 10px;
   border-bottom: 1px solid #ddd;
+  text-align: left;
 }
 
 tr:hover {
@@ -203,6 +168,7 @@ button {
   border-radius: 5px;
   background-color: #007bff;
   color: white;
+  cursor: pointer;
 }
 
 button:hover {
@@ -212,21 +178,35 @@ button:hover {
 
 ---
 
-✅ Output:
+⚙️ Logic summary:
 
-सर्व hotel list दिसेल.
+Role	Columns दिसणारे	Update Button
 
-जर localStorage मध्ये "role" = "manager" असेल → Update बटण दिसेल.
-
-Update वर क्लिक केल्यावर /update-hotel/{id} route नेतो.
+Manager	Name, Location, Amenities, Rating, Manager ID	✅ दिसतो
+User	Name, Location, Amenities, Rating	❌ लपतो
 
 
 
 ---
 
-आता तू confirm कर:
+🔑 Role कसं set करायचं:
 
-> पुढे मी update-hotel module देऊ का — जो manager ने क्लिक केल्यावर form उघडेल आणि update करेल (backend PUT call)?
+Login झाल्यावर —
+localStorage.setItem("role", "manager");
+किंवा
+localStorage.setItem("role", "user");
 
 
+---
+
+तसं केल्यावर UI आपोआप बदलतो 👇
+
+🧍‍♂️ User login: फक्त hotels list दिसते.
+👨‍💼 Manager login: "Manager ID" आणि "Update" बटण दिसतं.
+
+
+---
+
+आता confirm कर → मी यावर आधारित Update Hotel (separate form component) तयार करतो का?
+(Manager क्लिक केल्यावर hotel चं pre-filled form उघडेल आणि PUT API call होईल ✅)
 
