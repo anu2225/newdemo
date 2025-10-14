@@ -1,303 +1,88 @@
-
-
-
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
-@Injectable({
-  providedIn: 'root'
-})
-export class HotelService {
-  private apiUrl = 'http://localhost:8080/api/hotels';
-
-  constructor(private http: HttpClient) {}
-
-  // Get all hotels
-  getHotelList(): Observable<any> {
-    return this.http.get(`${this.apiUrl}`);
-  }
-
-  // Get hotel by ID
-  getHotelById(id: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/${id}`);
-  }
-
-  // Update hotel by ID
-  updateHotel(id: number, hotel: any, token?: string): Observable<any> {
-    const headers = token
-      ? new HttpHeaders().set('Authorization', `Bearer ${token}`)
-      : new HttpHeaders();
-
-    return this.http.put(`${this.apiUrl}/${id}`, hotel, { headers });
-  }
-
-  // Create new hotel
-  createHotel(hotel: any, token?: string): Observable<any> {
-    const headers = token
-      ? new HttpHeaders().set('Authorization', `Bearer ${token}`)
-      : new HttpHeaders();
-
-    return this.http.post(`${this.apiUrl}`, hotel, { headers });
-  }
-}
-
-
-
-
-
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
-@Injectable({
-  providedIn: 'root'
-})
-export class HotelService {
-  private apiUrl = 'http://localhost:8080/api/hotels';
-
-  constructor(private http: HttpClient) {}
-
-  // Get all hotels
-  getHotelList(): Observable<any> {
-    return this.http.get(`${this.apiUrl}`);
-  }
-
-  // Get hotel by ID
-  getHotelById(id: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/${id}`);
-  }
-
-  // Update hotel
-  updateHotel(id: number, hotel: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, hotel);
-  }
-
-  // **Add this method**
-  createHotel(hotel: any, token?: string): Observable<any> {
-    const headers = token
-      ? { Authorization: `Bearer ${token}` }
-      : {};
-    return this.http.post(`${this.apiUrl}`, hotel, { headers });
-  }
-}
-
-
-
-
-
-
-
-
-import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { HotelService } from '../../../core/services/hotel.service';
-
-@Component({
-  selector: 'app-create-hotel',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './create-hotel.component.html',
-  styleUrls: ['./create-hotel.component.css']
-})
-export class CreateHotelComponent {
-  hotelForm: FormGroup;
-  message = '';
-
-  constructor(
-    private fb: FormBuilder,
-    private hotelService: HotelService,
-    private router: Router
-  ) {
-    this.hotelForm = this.fb.group({
-      name: ['', Validators.required],
-      location: ['', Validators.required],
-      amenities: ['', Validators.required],
-      rating: [null, [Validators.required, Validators.min(1), Validators.max(5)]]
-    });
-  }
-
-  onSubmit(): void {
-    if (this.hotelForm.invalid) {
-      this.message = 'Please fill all fields correctly!';
-      return;
-    }
-
-    const token = localStorage.getItem('token') || '';
-
-    this.hotelService.createHotel(this.hotelForm.value, token).subscribe({
-      next: () => {
-        this.message = 'Hotel created successfully!';
-        setTimeout(() => this.router.navigate(['/hotels']), 1000);
-      },
-      error: (err) => {
-        console.error(err);
-        this.message = 'Something went wrong while creating hotel!';
-      }
-    });
-  }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-toअरे बरोबर, मी तुला आता तुमच्या existing code structure वर आधारित full working role-based Hotel List + Update workflow step-by-step तयार करून देतो. हे plug-and-play आहे आणि user/manager roles handle केलेले आहेत.
+ठीक आहे! 😎 मी तुला Standalone Search Hotel feature साठी फक्त TS, HTML आणि CSS देतो. हे independent module आहे, तुम्ही existing GetAllHotelsComponent मध्ये integrate करू शकता किंवा standalone ठेवू शकता.
 
 
 ---
 
-1️⃣ AuthService – Role Management
-
-auth.service.ts:
+1️⃣ hotel.service.ts (Search function)
 
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-@Injectable({
-  providedIn: 'root'
-})
-export class AuthService {
-  private apiUrl = 'http://localhost:8080/api/auth';
-  private currentRole: string = 'USER'; // default
+@Injectable({ providedIn: 'root' })
+export class HotelService {
+  private apiUrl = 'http://localhost:8080/api/hotels';
 
   constructor(private http: HttpClient) {}
 
-  login(credentials: {email: string, password: string}): Observable<any> {
-    return this.http.post(`${this.apiUrl}/login`, credentials);
-  }
-
-  setRole(role: string) {
-    this.currentRole = role;
-    localStorage.setItem('role', role);
-  }
-
-  getRole(): string {
-    return this.currentRole || localStorage.getItem('role') || 'USER';
-  }
-
-  isManager(): boolean {
-    return this.getRole().toLowerCase() === 'manager';
+  // Search hotels by name
+  searchHotels(name: string): Observable<any> {
+    const params = new HttpParams().set('name', name);
+    return this.http.get(`${this.apiUrl}/search`, { params });
   }
 }
 
 
 ---
 
-2️⃣ HotelService – API Calls
-
-hotel.service.ts:
-
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
-@Injectable({
-  providedIn: 'root'
-})
-export class HotelService {
-  private apiUrl = 'http://localhost:8080/api/hotels';
-
-  constructor(private http: HttpClient) {}
-
-  getHotelList(): Observable<any> {
-    return this.http.get(`${this.apiUrl}`);
-  }
-
-  getHotelById(id: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/${id}`);
-  }
-
-  updateHotel(id: number, hotel: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, hotel);
-  }
-}
-
-
----
-
-3️⃣ GetAllHotelsComponent – Role Based
-
-get-all-hotels.component.ts:
+2️⃣ search-hotel.component.ts
 
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { HotelService } from '../services/hotel.service';
-import { AuthService } from '../services/auth.service';
 
 @Component({
-  selector: 'app-get-all-hotels',
+  selector: 'app-search-hotel',
   standalone: true,
-  imports: [CommonModule, RouterModule],
-  templateUrl: './get-all-hotels.component.html',
-  styleUrls: ['./get-all-hotels.component.css']
+  imports: [CommonModule, FormsModule],
+  templateUrl: './search-hotel.component.html',
+  styleUrls: ['./search-hotel.component.css']
 })
-export class GetAllHotelsComponent implements OnInit {
+export class SearchHotelComponent implements OnInit {
+  searchName = '';
   hotels: any[] = [];
-  loading = true;
+  loading = false;
   error = '';
-  role = '';
 
-  constructor(
-    private hotelService: HotelService,
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  constructor(private hotelService: HotelService) {}
 
-  ngOnInit(): void {
-    this.role = this.authService.getRole();
-    this.getHotels();
-  }
+  ngOnInit(): void {}
 
-  getHotels() {
-    this.hotelService.getHotelList().subscribe({
-      next: (data) => {
-        this.hotels = data;
+  searchHotels() {
+    if (!this.searchName) {
+      this.hotels = [];
+      return;
+    }
+    this.loading = true;
+    this.hotelService.searchHotels(this.searchName).subscribe({
+      next: (res) => {
+        this.hotels = res;
         this.loading = false;
       },
       error: (err) => {
-        this.error = 'Error fetching hotels';
         console.error(err);
+        this.error = 'Search failed';
         this.loading = false;
       }
     });
-  }
-
-  editHotel(id: number) {
-    if (this.authService.isManager()) {
-      this.router.navigate(['/update-hotel', id]);
-    } else {
-      alert('Only Manager can update hotels!');
-    }
   }
 }
 
 
 ---
 
-4️⃣ GetAllHotels HTML
+3️⃣ search-hotel.component.html
 
-get-all-hotels.component.html:
+<div class="search-container">
+  <h2>Search Hotels</h2>
 
-<div class="hotel-container">
-  <h2>Hotel List</h2>
+  <div class="search-box">
+    <input type="text" placeholder="Enter hotel name" [(ngModel)]="searchName" />
+    <button (click)="searchHotels()">Search</button>
+  </div>
 
-  <div *ngIf="loading">Loading hotels...</div>
+  <div *ngIf="loading">Searching hotels...</div>
   <div *ngIf="error" class="error">{{ error }}</div>
 
   <table *ngIf="!loading && hotels.length > 0">
@@ -307,8 +92,6 @@ get-all-hotels.component.html:
         <th>Location</th>
         <th>Amenities</th>
         <th>Rating</th>
-        <th *ngIf="role.toLowerCase() === 'manager'">Manager ID</th>
-        <th *ngIf="role.toLowerCase() === 'manager'">Action</th>
       </tr>
     </thead>
     <tbody>
@@ -317,156 +100,102 @@ get-all-hotels.component.html:
         <td>{{ h.location }}</td>
         <td>{{ h.amenities }}</td>
         <td>{{ h.rating }}</td>
-        <td *ngIf="role.toLowerCase() === 'manager'">{{ h.managerId }}</td>
-        <td *ngIf="role.toLowerCase() === 'manager'">
-          <button (click)="editHotel(h.hotelId)">Update</button>
-        </td>
       </tr>
     </tbody>
   </table>
 
-  <p *ngIf="!loading && hotels.length === 0">No hotels found!</p>
+  <p *ngIf="!loading && hotels.length === 0 && searchName">No hotels found!</p>
 </div>
 
 
 ---
 
-5️⃣ UpdateHotelComponent
+4️⃣ search-hotel.component.css
 
-update-hotel.component.ts:
+.search-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  background-color: #f9f9f9;
+}
 
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
-import { HotelService } from '../services/hotel.service';
-import { CommonModule } from '@angular/common';
+h2 {
+  text-align: center;
+  color: #007bff;
+}
 
-@Component({
-  selector: 'app-update-hotel',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './update-hotel.component.html',
-  styleUrls: ['./update-hotel.component.css']
-})
-export class UpdateHotelComponent implements OnInit {
-  updateForm!: FormGroup;
-  hotelId!: number;
-  message = '';
+.search-box {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 15px;
+}
 
-  constructor(
-    private fb: FormBuilder,
-    private hotelService: HotelService,
-    private route: ActivatedRoute,
-    private router: Router
-  ) {}
+input {
+  padding: 6px 10px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  flex: 1;
+}
 
-  ngOnInit(): void {
-    this.updateForm = this.fb.group({
-      name: ['', Validators.required],
-      location: ['', Validators.required],
-      amenities: ['', Validators.required],
-      rating: ['', [Validators.required, Validators.min(1), Validators.max(5)]]
-    });
+button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+}
 
-    this.hotelId = Number(this.route.snapshot.paramMap.get('id'));
+button:hover {
+  background-color: #005663;
+}
 
-    if (this.hotelId) {
-      this.hotelService.getHotelById(this.hotelId).subscribe({
-        next: (data) => this.updateForm.patchValue(data),
-        error: (err) => console.error('Error fetching hotel', err)
-      });
-    }
-  }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
 
-  onSubmit(): void {
-    if (this.updateForm.valid) {
-      this.hotelService.updateHotel(this.hotelId, this.updateForm.value).subscribe({
-        next: () => {
-          this.message = 'Hotel updated successfully!';
-          setTimeout(() => this.router.navigate(['/hotels']), 1500);
-        },
-        error: (err) => {
-          this.message = 'Failed to update hotel.';
-          console.error(err);
-        }
-      });
-    }
-  }
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  text-align: left;
+}
+
+tr:hover {
+  background-color: #f1f1f1;
+}
+
+.error {
+  color: red;
+  text-align: center;
 }
 
 
 ---
 
-6️⃣ UpdateHotel HTML
+✅ Features included:
 
-update-hotel.component.html:
-
-<div class="update-container">
-  <h2>Update Hotel Details</h2>
-
-  <form [formGroup]="updateForm" (ngSubmit)="onSubmit()">
-    <div class="form-group">
-      <label>Hotel Name:</label>
-      <input formControlName="name" type="text" placeholder="Enter hotel name" />
-    </div>
-
-    <div class="form-group">
-      <label>Location:</label>
-      <input formControlName="location" type="text" placeholder="Enter location" />
-    </div>
-
-    <div class="form-group">
-      <label>Amenities:</label>
-      <input formControlName="amenities" type="text" placeholder="Enter amenities" />
-    </div>
-
-    <div class="form-group">
-      <label>Rating:</label>
-      <input formControlName="rating" type="number" placeholder="1 - 5" />
-    </div>
-
-    <button type="submit" [disabled]="updateForm.invalid">Update Hotel</button>
-  </form>
-
-  <p class="message">{{ message }}</p>
-</div>
+1. Search hotels by name
 
 
----
-
-✅ 7️⃣ App Routes
-
-app.routes.ts:
-
-import { Routes } from '@angular/router';
-import { GetAllHotelsComponent } from './get-all-hotels/get-all-hotels.component';
-import { UpdateHotelComponent } from './update-hotel/update-hotel.component';
-
-export const routes: Routes = [
-  { path: 'hotels', component: GetAllHotelsComponent },
-  { path: 'update-hotel/:id', component: UpdateHotelComponent },
-  { path: '', redirectTo: '/hotels', pathMatch: 'full' }
-];
+2. Shows table of results
 
 
----
-
-💡 Logic Summary
-
-1. User login → role = user → View only hotel list
+3. Shows "No hotels found!" if nothing matches
 
 
-2. Manager login → role = manager → View + Update hotels
-
-
-3. Click Update → /update-hotel/:id route → form pre-filled → update → PUT API → database updated → redirect back to hotel list.
+4. Loading & error handling
 
 
 
 
 ---
 
-जर हवं असेल, मी तुला आता Swagger + Postman वापरून backend verify करून plug-and-play flow ready करायला step-by-step दाखवतो, जेणेकरून Angular+Spring Boot connection perfect काम करेल.
+मी हवं असल्यास नंतर Filter by rating चा Standalone component सुद्धा separate देऊ शकतो.
 
-तुम्ही हवं ते करतो का?
+तुला मी Filter component सुद्धा देऊ का?
 
