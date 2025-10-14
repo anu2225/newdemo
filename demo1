@@ -1,3 +1,51 @@
+import { Component, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { BrowserModule } from '@angular/platform-browser';
+import { ReactiveFormsModule } from '@angular/forms';
+
+// Features
+import { Login } from './features/auth/login/login';
+import { WelcomeUser } from './features/user/welcome-user/welcome-user';
+import { Register } from './features/auth/register/register';
+import { CreateHotel } from './features/hotel/create-hotel/hotel';
+import { GetAllHotelsComponent } from './features/hotel/get-all-hotels/hotel';
+import { UpdateHotelComponent } from './features/hotel/update-hotel/hotel';
+import { SearchHotelComponent } from './features/hotel/search-hotel/hotel';
+import { FilterHotelComponent } from './features/hotel/filter-hotel/hotel';
+import { RoomComponent } from './features/room/get-all-rooms/room';
+import { CreateRoomComponent } from './features/room/create-room/room';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    BrowserModule,
+    ReactiveFormsModule,
+    RouterOutlet,
+    Login,
+    Register,
+    WelcomeUser,
+    CreateHotel,
+    GetAllHotelsComponent,
+    UpdateHotelComponent,
+    SearchHotelComponent,
+    FilterHotelComponent,
+    RoomComponent,
+    CreateRoomComponent
+  ],
+  templateUrl: './app.html',
+  styleUrls: ['./app.css']
+})
+export class App {
+  protected readonly title = signal('SmartHotelBookingSystem');
+}
+
+
+
+
+
+
+
 Perfect 🔥 तुझं म्हणणं म्हणजे — “Room create” चं code कोणत्या file मध्ये add करायचं हे direct सांग.
 चल, step-by-step clear सांगतो 👇
 
