@@ -1,3 +1,235 @@
+छान! 😎 मग पुढे Update Room Page तयार करू, ज्यात तुला backend चा PUT /api/rooms/{id} route Angular frontend मध्ये fully work करणारा setup मिळेल — TS + HTML + CSS सहित.
+
+
+---
+
+2️⃣ Update Room Page
+
+Folder Structure
+
+features/room/update-room/
+ ├─ update-room.component.ts
+ ├─ update-room.component.html
+ ├─ update-room.component.css
+
+
+---
+
+1. update-room.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { RoomService } from '../../../core/services/roomservice';
+import { Room } from '../../../core/models/room.model';
+
+@Component({
+  selector: 'app-update-room',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './update-room.component.html',
+  styleUrls: ['./update-room.component.css']
+})
+export class UpdateRoomComponent implements OnInit {
+  roomForm!: FormGroup;
+  successMessage = '';
+  errorMessage = '';
+
+  constructor(private fb: FormBuilder, private roomService: RoomService) {}
+
+  ngOnInit(): void {
+    this.roomForm = this.fb.group({
+      roomId: [null, [Validators.required, Validators.min(1)]],
+      type: ['', Validators.required],
+      price: [null, [Validators.required, Validators.min(1)]],
+      availability: [true, Validators.required],
+      features: ['', Validators.required],
+      hotelId: [null, Validators.required]
+    });
+  }
+
+  updateRoom(): void {
+    if (this.roomForm.valid) {
+      const roomId = this.roomForm.value.roomId;
+      const updateData = {
+        type: this.roomForm.value.type,
+        price: this.roomForm.value.price,
+        availability: this.roomForm.value.availability,
+        features: this.roomForm.value.features,
+        hotelId: this.roomForm.value.hotelId
+      };
+
+      this.roomService.updateRoom(roomId, updateData).subscribe({
+        next: () => {
+          this.successMessage = 'Room updated successfully!';
+          this.errorMessage = '';
+        },
+        error: () => {
+          this.errorMessage = 'Failed to update room.';
+          this.successMessage = '';
+        }
+      });
+    } else {
+      this.errorMessage = 'Please fill all required fields.';
+      this.successMessage = '';
+    }
+  }
+}
+
+
+---
+
+2. update-room.component.html
+
+<div class="update-room-container">
+  <h2>Update Room</h2>
+
+  <form [formGroup]="roomForm" (ngSubmit)="updateRoom()">
+    <div class="form-group">
+      <label>Room ID:</label>
+      <input type="number" formControlName="roomId" placeholder="Enter Room ID" />
+    </div>
+
+    <div class="form-group">
+      <label>Room Type:</label>
+      <input type="text" formControlName="type" placeholder="Deluxe, Suite..." />
+    </div>
+
+    <div class="form-group">
+      <label>Price:</label>
+      <input type="number" formControlName="price" placeholder="Enter price" />
+    </div>
+
+    <div class="form-group">
+      <label>Availability:</label>
+      <select formControlName="availability">
+        <option [value]="true">Available</option>
+        <option [value]="false">Not Available</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Features:</label>
+      <input type="text" formControlName="features" placeholder="AC, WiFi, TV..." />
+    </div>
+
+    <div class="form-group">
+      <label>Hotel ID:</label>
+      <input type="number" formControlName="hotelId" placeholder="Associated hotel ID" />
+    </div>
+
+    <button type="submit" [disabled]="roomForm.invalid">Update Room</button>
+  </form>
+
+  <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+</div>
+
+
+---
+
+3. update-room.component.css
+
+.update-room-container {
+  max-width: 450px;
+  margin: 40px auto;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.1);
+  background-color: #fff;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+input, select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #218838;
+}
+
+.success { color: green; text-align: center; margin-top: 10px; }
+.error { color: red; text-align: center; margin-top: 10px; }
+
+
+---
+
+4️⃣ RoomService.ts Method
+
+updateRoom(id: number, roomData: any): Observable<any> {
+  return this.http.put(`${this.apiUrl}/${id}`, roomData);
+}
+
+
+---
+
+5️⃣ Routing (app.routes.ts)
+
+{ path: 'update-room', component: UpdateRoomComponent }
+
+
+---
+
+✅ Usage
+
+1. Browser मध्ये जा:
+
+
+
+http://localhost:4200/update-room
+
+2. Room ID टाका, बाकी fields भरून Update Room click करा.
+
+
+3. Backend call होईल, success/error message display होईल.
+
+
+
+
+---
+
+तुला हवं तर पुढे Delete Room Page आणि Get Rooms By Hotel Page पण full code ready-to-run देऊ शकतो, तसंच Available Rooms Page पण तयार.
+
+तुम्ही पुढे Delete Room setup करायचं का?
+
+
+
+
+
+
+
+
+
+
+
 बरोबर! 🙂 आपण step-by-step, full Angular frontend setup देऊ — प्रत्येक backend route साठी TS + HTML + CSS ready-to-run.
 
 आपण सुरु करू Get Room By ID पासून.
