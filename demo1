@@ -1,4 +1,273 @@
+
+
+
+
+
+
+
+
+Perfect! 🔥 मी तुला final, fully corrected, standalone + reactive form + routing ready-to-run Angular setup देतो. ह्या setup मध्ये BrowserModule misuse नाही, [formGroup] काम करेल, आणि Create Room + Get All Rooms दोन्ही चालतील.
+
+
+---
+
+1️⃣ app.component.ts (Standalone Root)
+
+import { Component, signal } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
+
+// Features
+import { Login } from './features/auth/login/login';
+import { Register } from './features/auth/register/register';
+import { WelcomeUser } from './features/user/welcome-user/welcome-user';
+import { CreateHotel } from './features/hotel/create-hotel/hotel';
+import { GetAllHotelsComponent } from './features/hotel/get-all-hotels/hotel';
+import { UpdateHotelComponent } from './features/hotel/update-hotel/hotel';
+import { SearchHotelComponent } from './features/hotel/search-hotel/hotel';
+import { FilterHotelComponent } from './features/hotel/filter-hotel/hotel';
+import { RoomComponent } from './features/room/get-all-rooms/room';
+import { CreateRoomComponent } from './features/room/create-room/room';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterOutlet,
+    Login,
+    Register,
+    WelcomeUser,
+    CreateHotel,
+    GetAllHotelsComponent,
+    UpdateHotelComponent,
+    SearchHotelComponent,
+    FilterHotelComponent,
+    RoomComponent,
+    CreateRoomComponent
+  ],
+  templateUrl: './app.html',
+  styleUrls: ['./app.css']
+})
+export class App {
+  protected readonly title = signal('SmartHotelBookingSystem');
+}
+
+
+---
+
+2️⃣ create-room.component.ts (Standalone)
+
 import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { RoomService } from '../../../core/services/roomservice';
+
+@Component({
+  selector: 'app-create-room',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './create-room.component.html',
+  styleUrls: ['./create-room.component.css']
+})
+export class CreateRoomComponent implements OnInit {
+  roomForm!: FormGroup;
+  successMessage = '';
+  errorMessage = '';
+
+  constructor(private fb: FormBuilder, private roomService: RoomService) {}
+
+  ngOnInit(): void {
+    this.roomForm = this.fb.group({
+      type: ['', Validators.required],
+      price: [null, [Validators.required, Validators.min(1)]],
+      availability: [true, Validators.required],
+      features: ['', Validators.required],
+      hotelId: [null, Validators.required]
+    });
+  }
+
+  createRoom(): void {
+    if (this.roomForm.valid) {
+      this.roomService.createRoom(this.roomForm.value).subscribe({
+        next: () => {
+          this.successMessage = 'Room created successfully!';
+          this.errorMessage = '';
+          this.roomForm.reset();
+        },
+        error: () => {
+          this.errorMessage = 'Failed to create room.';
+          this.successMessage = '';
+        }
+      });
+    } else {
+      this.errorMessage = 'Please fill all required fields.';
+      this.successMessage = '';
+    }
+  }
+}
+
+
+---
+
+3️⃣ create-room.component.html
+
+<div class="room-container">
+  <h2>Create New Room</h2>
+
+  <form [formGroup]="roomForm" (ngSubmit)="createRoom()">
+    <div class="form-group">
+      <label>Room Type:</label>
+      <input type="text" formControlName="type" placeholder="Deluxe, Suite..." />
+    </div>
+
+    <div class="form-group">
+      <label>Price:</label>
+      <input type="number" formControlName="price" placeholder="Enter price" />
+    </div>
+
+    <div class="form-group">
+      <label>Availability:</label>
+      <select formControlName="availability">
+        <option [value]="true">Available</option>
+        <option [value]="false">Not Available</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Features:</label>
+      <input type="text" formControlName="features" placeholder="AC, WiFi, TV..." />
+    </div>
+
+    <div class="form-group">
+      <label>Hotel ID:</label>
+      <input type="number" formControlName="hotelId" placeholder="Associated hotel ID" />
+    </div>
+
+    <button type="submit" [disabled]="roomForm.invalid">Create Room</button>
+  </form>
+
+  <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+</div>
+
+
+---
+
+4️⃣ create-room.component.css
+
+.room-container {
+  max-width: 450px;
+  margin: 40px auto;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
+  background-color: #fff;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+input, select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.success { color: green; text-align: center; margin-top: 10px; }
+.error { color: red; text-align: center; margin-top: 10px; }
+
+
+---
+
+5️⃣ RoomService Method
+
+createRoom(roomData: any): Observable<any> {
+  return this.http.post(`${this.apiUrl}/rooms`, roomData);
+}
+
+
+---
+
+6️⃣ Routing (app.routes.ts)
+
+{ path: 'create-room', component: CreateRoomComponent },
+{ path: 'get-all-rooms', component: RoomComponent }
+
+
+---
+
+✅ Key Points
+
+[formGroup] works (ReactiveFormsModule imported in standalone component)
+
+BrowserModule only root bootstrap मध्ये, standalone components मध्ये CommonModule
+
+Create Room + Get All Rooms ready-to-run
+
+
+
+---
+
+7️⃣ Run
+
+ng serve
+
+Browser:
+
+http://localhost:4200/create-room
+
+Form दिसेल, submit करेल, backend call होईल.
+
+
+---
+
+तुझ्या हवे असल्यास मी पुढे Rooms List page + Create Room page navigation button ready setup पण देऊ शकतो, जे एकदम smooth user experience देईल.
+
+करू का?
+
+
+
+
+
+
+
+
+
+
+
+
+mport { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RoomService } from '../../../core/services/roomservice';
