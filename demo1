@@ -22,3 +22,234 @@ export const routes: Routes = [
     {path:'filter-hotel',component:FilterHotelComponent},
     {path:'get-all-rooms',component:RoomComponent}
 ];
+
+
+
+
+Perfect 👌 Anurag! 🎯
+छान — "Get All Rooms" आता चालू झालंय, म्हणजे तुझं RoomComponent, RoomService सगळं backend शी नीट connect झालं आहे ✅
+
+आता पुढचं step:
+➡️ “Create Room” — म्हणजे user (manager/admin) नवीन room add करू शकेल.
+
+
+---
+
+🏗️ Step-by-Step: Create Room (Angular + Spring Boot backend match)
+
+तुझ्याकडे backend ला आधीच हे आहे 👇
+
+✅ RoomRequestDTO
+
+@AllArgsConstructor
+@NoArgsConstructor
+public class RoomRequestDTO {
+    @NotBlank(message = "Give a specific room type")
+    private String type;
+
+    @NotNull(message = "Price cannot be null")
+    private double price;
+
+    private boolean availability;
+
+    @NotBlank(message = "Features cannot be null")
+    private String features;
+
+    @NotNull(message = "Hotel Id cannot be null")
+    private Long hotelId;
+}
+
+आता frontend साठी matching part बनवू 👇
+
+
+---
+
+🧩 1. room-create.component.ts
+
+📂 src/app/features/room/create-room/room.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { RoomService } from '../../../core/services/roomservice';
+import { HotelService } from '../../../core/services/hotelservice';
+
+@Component({
+  selector: 'app-create-room',
+  templateUrl: './room.html',
+  styleUrls: ['./room.css']
+})
+export class CreateRoomComponent implements OnInit {
+  roomForm!: FormGroup;
+  hotels: any[] = []; // For dropdown
+
+  constructor(
+    private fb: FormBuilder,
+    private roomService: RoomService,
+    private hotelService: HotelService
+  ) {}
+
+  ngOnInit(): void {
+    this.roomForm = this.fb.group({
+      type: ['', Validators.required],
+      price: [0, [Validators.required, Validators.min(0)]],
+      availability: [true],
+      features: ['', Validators.required],
+      hotelId: ['', Validators.required]
+    });
+
+    // Fetch hotels for dropdown
+    this.hotelService.getHotelList().subscribe({
+      next: (data) => (this.hotels = data),
+      error: (err) => console.error(err)
+    });
+  }
+
+  createRoom() {
+    if (this.roomForm.invalid) return;
+    const roomData = this.roomForm.value;
+
+    this.roomService.createRoom(roomData).subscribe({
+      next: (res) => {
+        alert('Room created successfully ✅');
+        this.roomForm.reset();
+      },
+      error: (err) => {
+        console.error(err);
+        alert('Error creating room ❌');
+      }
+    });
+  }
+}
+
+
+---
+
+🧾 2. room.html
+
+📂 src/app/features/room/create-room/room.html
+
+<div class="create-room-container">
+  <h2>Create Room</h2>
+
+  <form [formGroup]="roomForm" (ngSubmit)="createRoom()">
+    <label>Room Type:</label>
+    <input formControlName="type" placeholder="e.g. Deluxe, Suite" />
+
+    <label>Price:</label>
+    <input type="number" formControlName="price" />
+
+    <label>Availability:</label>
+    <select formControlName="availability">
+      <option [value]="true">Available</option>
+      <option [value]="false">Not Available</option>
+    </select>
+
+    <label>Features:</label>
+    <textarea formControlName="features"></textarea>
+
+    <label>Hotel:</label>
+    <select formControlName="hotelId">
+      <option *ngFor="let hotel of hotels" [value]="hotel.id">
+        {{ hotel.name }}
+      </option>
+    </select>
+
+    <button type="submit" [disabled]="roomForm.invalid">Create Room</button>
+  </form>
+</div>
+
+
+---
+
+🎨 3. room.css
+
+📂 src/app/features/room/create-room/room.css
+
+.create-room-container {
+  width: 400px;
+  margin: 30px auto;
+  padding: 20px;
+  background: #f7f9fc;
+  border-radius: 12px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.create-room-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-top: 5px;
+}
+
+button {
+  width: 100%;
+  margin-top: 20px;
+  background-color: #007bff;
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: gray;
+  cursor: not-allowed;
+}
+
+
+---
+
+🔗 4. roomservice.ts मध्ये Create Room add करा
+
+(तू आधी बनवलेली RoomService file मध्ये ही method फक्त add कर👇)
+
+createRoom(roomData: any): Observable<any> {
+  return this.http.post(`${this.apiUrl}`, roomData);
+}
+
+
+---
+
+🛣️ 5. app.routes.ts मध्ये route जोडा
+
+{ path: 'create-room', component: CreateRoomComponent }
+
+
+---
+
+✅ 6. Test
+
+1. Run backend → Spring Boot (8080)
+
+
+2. Run frontend → Angular (ng serve)
+
+
+3. Browser मध्ये → http://localhost:4200/create-room
+
+
+4. Form भरून → “Create Room” click करा → success alert येईल 🎉
+
+
+
+
+---
+
+हवे तर मी तुला ready folder structure (create-room folder पूर्ण ३ files) copy-paste देऊ शकतो, Angular मध्ये पेस्ट केल्यावर लगेच चालेल.
+देऊ का?
+
