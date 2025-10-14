@@ -1,247 +1,50 @@
-Perfect! चल, Anurag. मी तुला Room module Angular frontend reactive form + backend integration step-by-step setup देतो, SmartHotelBookingSystem मध्ये, all naming exactly as you want (room.ts, room.html, room.css).
-
-
----
-
-1️⃣ room.ts (Component)
-
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { RoomService } from '../services/room.service';
-import { Room } from '../models/room';
-
-@Component({
-  selector: 'app-room',
-  templateUrl: './room.html',
-  styleUrls: ['./room.css']
-})
-export class RoomComponent implements OnInit {
-
-  roomForm!: FormGroup;
-  rooms: Room[] = [];
-  hotels: any[] = []; // To populate hotel dropdown
-
-  constructor(private fb: FormBuilder, private roomService: RoomService) {}
-
-  ngOnInit(): void {
-    this.roomForm = this.fb.group({
-      roomNumber: ['', Validators.required],
-      type: ['', Validators.required],
-      pricePerNight: ['', [Validators.required, Validators.min(0)]],
-      isAvailable: [true],
-      hotelId: ['', Validators.required]
-    });
-
-    this.loadRooms();
-    this.loadHotels();
-  }
-
-  loadRooms() {
-    this.roomService.getAllRooms().subscribe({
-      next: (res) => this.rooms = res,
-      error: (err) => console.error('Error loading rooms', err)
-    });
-  }
-
-  loadHotels() {
-    this.roomService.getAllHotels().subscribe({
-      next: (res) => this.hotels = res,
-      error: (err) => console.error('Error loading hotels', err)
-    });
-  }
-
-  submitRoom() {
-    if (this.roomForm.invalid) return;
-
-    this.roomService.createRoom(this.roomForm.value).subscribe({
-      next: (res) => {
-        alert('Room created successfully!');
-        this.roomForm.reset();
-        this.loadRooms();
-      },
-      error: (err) => console.error('Error creating room', err)
-    });
-  }
-}
-
-
----
-
-2️⃣ room.html (Template)
-
-<div class="room-container">
-  <h2>Create Room</h2>
-  <form [formGroup]="roomForm" (ngSubmit)="submitRoom()">
-
-    <label>Room Number</label>
-    <input type="text" formControlName="roomNumber">
-
-    <label>Type</label>
-    <select formControlName="type">
-      <option value="Single">Single</option>
-      <option value="Double">Double</option>
-      <option value="Suite">Suite</option>
-    </select>
-
-    <label>Price Per Night</label>
-    <input type="number" formControlName="pricePerNight">
-
-    <label>Availability</label>
-    <input type="checkbox" formControlName="isAvailable">
-
-    <label>Hotel</label>
-    <select formControlName="hotelId">
-      <option *ngFor="let hotel of hotels" [value]="hotel.id">{{hotel.name}}</option>
-    </select>
-
-    <button type="submit" [disabled]="roomForm.invalid">Save Room</button>
-  </form>
-
-  <hr>
-
-  <h2>All Rooms</h2>
-  <table>
-    <tr>
-      <th>ID</th>
-      <th>Number</th>
-      <th>Type</th>
-      <th>Price</th>
-      <th>Available</th>
-      <th>Hotel</th>
-    </tr>
-    <tr *ngFor="let room of rooms">
-      <td>{{room.id}}</td>
-      <td>{{room.roomNumber}}</td>
-      <td>{{room.type}}</td>
-      <td>{{room.pricePerNight}}</td>
-      <td>{{room.isAvailable}}</td>
-      <td>{{room.hotelId}}</td>
-    </tr>
-  </table>
-</div>
-
-
----
-
-3️⃣ room.css (Styling)
-
-.room-container {
-  max-width: 600px;
-  margin: 20px auto;
-}
-
-form {
-  display: flex;
-  flex-direction: column;
-}
-
-label {
-  margin-top: 10px;
-}
-
-input, select {
-  padding: 5px;
-  margin-bottom: 10px;
-}
-
-button {
-  width: 150px;
-  padding: 8px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  cursor: pointer;
-}
-
-button:disabled {
-  background-color: gray;
-  cursor: not-allowed;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-th, td {
-  border: 1px solid black;
-  padding: 5px;
-  text-align: left;
-}
-
-
----
-
-4️⃣ room.ts (Model)
-
-export interface Room {
-  id?: number;
-  roomNumber: string;
-  type: string;
-  pricePerNight: number;
-  isAvailable: boolean;
-  hotelId: number;
-}
-
-
----
-
-5️⃣ room.service.ts (Backend Integration)
-
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Room } from '../models/room';
-import { Observable } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { from, Observable } from 'rxjs';
+import { HttpParams}from'@angular/common/http';
 
 @Injectable({
   providedIn: 'root'
 })
-export class RoomService {
-
-  private apiUrl = 'http://localhost:8080/api/rooms';
-  private hotelApiUrl = 'http://localhost:8080/api/hotels';
+export class HotelService {
+  private apiUrl = 'http://localhost:8080/api/hotels';
 
   constructor(private http: HttpClient) {}
 
-  getAllRooms(): Observable<Room[]> {
-    return this.http.get<Room[]>(this.apiUrl);
+  getHotelList(): Observable<any> {
+    return this.http.get(`${this.apiUrl}`);
   }
 
-  createRoom(room: Room): Observable<Room> {
-    return this.http.post<Room>(this.apiUrl, room);
+  getHotelById(id: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${id}`);
   }
 
-  getAllHotels(): Observable<any[]> {
-    return this.http.get<any[]>(this.hotelApiUrl);
+  createHotel(hotelData: any, token: string): Observable<any> {
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    return this.http.post(this.apiUrl, hotelData, { headers });
   }
+  searchHotels(name: string): Observable<any> {
+    const params = new HttpParams().set('location', name);
+    return this.http.get(`${this.apiUrl}/search`, { params });
+  }
+  //  filterHotelsByRating(minRating: number): Observable<any> {
+  //   const params = new HttpParams().set('minRating', minRating.toString());
+  //   return this.http.get(`${this.apiUrl}/filter`, { params });
+  //  }
+
+
+  filterHotelsByRating(minRating: number): Observable<any> {
+    // Important: ensure proper param name "minRating" and query string format
+    const params = new HttpParams().set('rating', minRating.toString());
+    return this.http.get(`${this.apiUrl}/filter`, { params });
+  }
+
+  updateHotel(id: number, hotel: any): Observable<any> {
+    return this.http.put(`${this.apiUrl}/${id}`, hotel);
 }
 
-
----
-
-✅ Next Steps / Mapping Checkpoints:
-
-1. Angular reactive form ready (roomForm)
-
-
-2. Submit form → POST to backend Room endpoint
-
-
-3. Load all rooms → GET backend Room endpoint
-
-
-4. Hotel dropdown is loaded from backend Hotel endpoint
-
-
-5. Table shows Room info including hotelId
-
-
-
-
----
-
-Anurag, मी ह्या setup नंतर पुढे Update + Delete + Filter rooms by hotel / availability सुद्धा करू शकतो, backend mapping + frontend nit match करून.
-
-तू हवे तर मी लगेच पुढच्या step वर देऊ का?
-
+  deleteHotel(id: number, token: string): Observable<any> {
+    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+    return this.http.delete(`${this.apiUrl}/${id}`, { headers });
+  }
+}
