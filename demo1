@@ -61,3 +61,101 @@ export class RoomService {
     return this.http.get<any[]>(this.hotelApiUrl);
   }
 }
+
+
+
+
+
+
+ठीक आहे, Anurag. तू म्हणतोयस की RoomService मध्ये HotelService style maintain करायचे आहे म्हणजे coding style, imports, headers, token handling, HttpParams सगळं HotelService प्रमाणे असेल.
+
+मी तुला RoomService full, HotelService reference style मध्ये ready-to-use देतो:
+
+
+---
+
+room.service.ts (HotelService style)
+
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Room } from '../models/room.model'; // Adjust path as per your project
+
+@Injectable({
+  providedIn: 'root'
+})
+export class RoomService {
+
+  private apiUrl = 'http://localhost:8080/api/rooms';
+  private hotelApiUrl = 'http://localhost:8080/api/hotels';
+
+  constructor(private http: HttpClient) {}
+
+  // Get all rooms
+  getRoomList(): Observable<Room[]> {
+    return this.http.get<Room[]>(`${this.apiUrl}`);
+  }
+
+  // Get room by id
+  getRoomById(id: number): Observable<Room> {
+    return this.http.get<Room>(`${this.apiUrl}/${id}`);
+  }
+
+  // Create a room with optional token
+  createRoom(roomData: Room, token?: string): Observable<Room> {
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.post<Room>(`${this.apiUrl}`, roomData, { headers });
+  }
+
+  // Update room
+  updateRoom(id: number, roomData: Room, token?: string): Observable<Room> {
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.put<Room>(`${this.apiUrl}/${id}`, roomData, { headers });
+  }
+
+  // Delete room
+  deleteRoom(id: number, token?: string): Observable<any> {
+    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
+    return this.http.delete(`${this.apiUrl}/${id}`, { headers });
+  }
+
+  // Get rooms by hotel (filter)
+  filterRoomsByHotel(hotelId: number): Observable<Room[]> {
+    const params = new HttpParams().set('hotelId', hotelId.toString());
+    return this.http.get<Room[]>(`${this.apiUrl}/filter`, { params });
+  }
+
+  // Get all hotels (for dropdown)
+  getHotelList(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.hotelApiUrl}`);
+  }
+}
+
+
+---
+
+Key Points
+
+1. Method names HotelService style ठेवले (getRoomList(), filterRoomsByHotel() etc).
+
+
+2. Headers + token handling exactly same (HttpHeaders + optional token).
+
+
+3. Backend /api/rooms + /api/hotels nit mapping.
+
+
+4. GET all rooms → getRoomList() call करायचा.
+
+
+
+
+---
+
+जर हवे तर मी पुढे RoomComponent + HTML + CSS सुद्धा HotelService style nit ready करून देऊ शकतो, फक्त create + list करेल backend सोबत.
+
+तुला ते हवे का?
+
+
+
+
