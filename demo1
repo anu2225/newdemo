@@ -1,3 +1,58 @@
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { RoomService } from '../../../core/services/roomservice';
+
+@Component({
+  selector: 'app-create-room',
+  standalone: true, // 👈 standalone
+  imports: [CommonModule, ReactiveFormsModule], // 👈 इथे import करा
+  templateUrl: './create-room.component.html',
+  styleUrls: ['./create-room.component.css']
+})
+export class CreateRoomComponent implements OnInit {
+  roomForm!: FormGroup;
+  successMessage = '';
+  errorMessage = '';
+
+  constructor(private fb: FormBuilder, private roomService: RoomService) {}
+
+  ngOnInit(): void {
+    this.roomForm = this.fb.group({
+      type: ['', Validators.required],
+      price: [null, [Validators.required, Validators.min(1)]],
+      availability: [true, Validators.required],
+      features: ['', Validators.required],
+      hotelId: [null, Validators.required]
+    });
+  }
+
+  createRoom(): void {
+    if (this.roomForm.valid) {
+      this.roomService.createRoom(this.roomForm.value).subscribe({
+        next: () => {
+          this.successMessage = 'Room created successfully!';
+          this.errorMessage = '';
+          this.roomForm.reset();
+        },
+        error: () => {
+          this.errorMessage = 'Failed to create room.';
+          this.successMessage = '';
+        }
+      });
+    } else {
+      this.errorMessage = 'Please fill all required fields.';
+      this.successMessage = '';
+    }
+  }
+}
+
+
+
+
+
+
+
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { BrowserModule } from '@angular/platform-browser';
