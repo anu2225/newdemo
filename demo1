@@ -1,197 +1,24 @@
-Ah, perfect Anurag. मग आपल्याला RoomComponent फक्त get all rooms + hotel-wise type summary हवे, create/edit/delete नाही. मी तुला nit ready-to-use clean component देतो.
-
-
----
-
-room.component.ts (Get All Rooms Only)
-
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common'; // for *ngFor, *ngIf
-import { RoomService } from '../../../core/services/roomservice';
-import { Room } from '../../../core/models/room.model';
-
-@Component({
-  selector: 'app-room',
-  templateUrl: './room.html',
-  styleUrls: ['./room.css'],
-  standalone: true,               // optional, if using standalone component
-  imports: [CommonModule]
-})
-export class RoomComponent implements OnInit {
-
-  rooms: Room[] = [];
-  hotelSummary: any[] = [];
-  hotels: any[] = [];
-
-  constructor(private roomService: RoomService) {}
-
-  ngOnInit(): void {
-    this.loadRooms();
-    this.loadHotels();
-  }
-
-  loadRooms() {
-    this.roomService.getRoomList().subscribe({
-      next: (res) => {
-        this.rooms = res;
-        this.generateSummary();
-      },
-      error: (err) => console.error('Error loading rooms:', err)
-    });
-  }
-
-  loadHotels() {
-    this.roomService.getHotelList().subscribe({
-      next: (res) => this.hotels = res,
-      error: (err) => console.error('Error loading hotels:', err)
-    });
-  }
-
-  generateSummary() {
-    const summary: any = {};
-
-    this.rooms.forEach(room => {
-      const hotelId = room.hotelId;
-      const type = room.type;
-
-      if (!summary[hotelId]) summary[hotelId] = {};
-      if (!summary[hotelId][type]) summary[hotelId][type] = 0;
-
-      summary[hotelId][type]++;
-    });
-
-    this.hotelSummary = Object.keys(summary).map(hotelId => {
-      const hotelName = this.hotels.find(h => h.id == +hotelId)?.name || `Hotel ${hotelId}`;
-      return {
-        hotelId,
-        hotelName,
-        types: Object.keys(summary[hotelId]).map(type => ({
-          type,
-          count: summary[hotelId][type]
-        }))
-      };
-    });
-  }
-}
-
-
----
-
-room.html (List View Only)
-
-<h2>Rooms Summary by Hotel</h2>
-
-<div *ngFor="let hotel of hotelSummary">
-  <h3>{{hotel.hotelName}}</h3>
-  <ul>
-    <li *ngFor="let t of hotel.types">
-      {{t.type}} : {{t.count}}
-    </li>
-  </ul>
-</div>
-
-
----
-
-✅ Features of This Setup
-
-1. Backend /api/rooms call करून rooms fetch करतो.
-
-
-2. /api/hotels call करून hotelId → hotelName map करतो.
-
-
-3. Hotel-wise + type-wise room count summary तयार करतो.
-
-
-4. फक्त list/fetch, create/edit/delete नाही.
-
-
-5. *ngFor works because CommonModule included.
-
-
-
-
----
-
-जर तुला हवे तर मी hotelId + type summary साठी sortable table UI + CSS सुद्धा तयार करून देऊ शकतो, जे professional दिसेल.
-
-मग तयार करू का मी ते देऊ?
-
-
-
-ठीक आहे, Anurag. मी तुला simple पण clean CSS देतो, जे RoomComponent summary view साठी perfect आहे.
-
-
----
-
-room.css
-
-h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    color: #2c3e50;
-    font-family: 'Arial', sans-serif;
-}
-
-h3 {
-    background-color: #3498db;
-    color: white;
-    padding: 8px 12px;
-    border-radius: 5px;
-    margin-top: 15px;
-    font-family: 'Arial', sans-serif;
-}
-
-ul {
-    list-style-type: none;
-    padding-left: 0;
-    margin-bottom: 20px;
-}
-
-li {
-    background-color: #ecf0f1;
-    margin: 5px 0;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-family: 'Arial', sans-serif;
-    font-size: 14px;
-}
-
-div {
-    max-width: 600px;
-    margin: 0 auto;
-}
-
-
----
-
-Features of This CSS
-
-1. Center-aligned heading (h2)
-
-
-2. Hotel name (h3) with blue background + white text
-
-
-3. Room type list clean, rounded gray boxes (li)
-
-
-4. Content centered with max-width → professional look
-
-
-5. Easy to customize colors/fonts if needed
-
-
-
-
----
-
-तुमच्या RoomComponent सोबत copy-paste केल्यावर summary clean, readable आणि responsive दिसेल.
-
-जर तुला हवे तर मी तुला hover effect + count highlight style देखील add करून देऊ शकतो, जे table सारखे UI देईल.
-
-मग तयार करू का मी ते?
-
-
-
+import { Routes } from '@angular/router';
+import { CreateHotel } from './features/hotel/create-hotel/hotel';
+import  GetAllHotels  from './features/hotel/get-all-hotels/hotelList';
+import { UpdateHotelComponent } from './features/hotel/update-hotel/hotel';
+import { SearchHotelComponent } from './features/hotel/search-hotel/hotel';
+import { FilterHotelComponent } from './features/hotel/filter-hotel/hotel';
+import { Login } from './features/auth/login/login';
+import { Register } from './features/auth/register/register';
+import { WelcomeUser } from './features/user/welcome-user/welcome-user';
+import { RoomComponent } from './features/room/gell-all-rooms/room';
+
+export const routes: Routes = [
+    {path: '', redirectTo: 'login', pathMatch: 'full'},
+    {path: 'login', component: Login},
+    {path: 'register', component: Register},
+    {path: 'welcome', component: WelcomeUser},
+    { path: 'create-hotel', component: CreateHotel },
+    { path: 'hotels', component: GetAllHotels },
+    { path: '', redirectTo: '/create-hotel', pathMatch: 'full' },
+    { path: 'update-hotel', component: UpdateHotelComponent },
+    { path:'search-hotel',component:SearchHotelComponent},
+    {path:'filter-hotel',component:FilterHotelComponent},
+    {path:'get-all-rooms',component:RoomComponent}
+];
