@@ -1,3 +1,188 @@
+
+ठीक आहे! 🚀 मग आपण तयार करू Delete Room Page — ज्यात Angular frontend वर user room delete करू शकतो backend च्या DELETE /api/rooms/{id} route वापरून.
+
+
+---
+
+3️⃣ Delete Room Page
+
+Folder Structure
+
+features/room/delete-room/
+ ├─ delete-room.component.ts
+ ├─ delete-room.component.html
+ ├─ delete-room.component.css
+
+
+---
+
+1. delete-room.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { RoomService } from '../../../core/services/roomservice';
+
+@Component({
+  selector: 'app-delete-room',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './delete-room.component.html',
+  styleUrls: ['./delete-room.component.css']
+})
+export class DeleteRoomComponent implements OnInit {
+  deleteForm!: FormGroup;
+  successMessage = '';
+  errorMessage = '';
+
+  constructor(private fb: FormBuilder, private roomService: RoomService) {}
+
+  ngOnInit(): void {
+    this.deleteForm = this.fb.group({
+      roomId: [null, [Validators.required, Validators.min(1)]]
+    });
+  }
+
+  deleteRoom(): void {
+    if (this.deleteForm.valid) {
+      const roomId = this.deleteForm.value.roomId;
+      this.roomService.deleteRoom(roomId).subscribe({
+        next: () => {
+          this.successMessage = 'Room deleted successfully!';
+          this.errorMessage = '';
+          this.deleteForm.reset();
+        },
+        error: () => {
+          this.errorMessage = 'Failed to delete room.';
+          this.successMessage = '';
+        }
+      });
+    }
+  }
+}
+
+
+---
+
+2. delete-room.component.html
+
+<div class="delete-room-container">
+  <h2>Delete Room</h2>
+
+  <form [formGroup]="deleteForm" (ngSubmit)="deleteRoom()">
+    <div class="form-group">
+      <label>Room ID:</label>
+      <input type="number" formControlName="roomId" placeholder="Enter Room ID to delete" />
+    </div>
+
+    <button type="submit" [disabled]="deleteForm.invalid">Delete Room</button>
+  </form>
+
+  <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+</div>
+
+
+---
+
+3. delete-room.component.css
+
+.delete-room-container {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.1);
+  background-color: #fff;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #c82333;
+}
+
+.success { color: green; text-align: center; margin-top: 10px; }
+.error { color: red; text-align: center; margin-top: 10px; }
+
+
+---
+
+4️⃣ RoomService.ts Method
+
+deleteRoom(id: number): Observable<any> {
+  return this.http.delete(`${this.apiUrl}/${id}`);
+}
+
+
+---
+
+5️⃣ Routing (app.routes.ts)
+
+{ path: 'delete-room', component: DeleteRoomComponent }
+
+
+---
+
+✅ Usage
+
+1. Browser मध्ये जा:
+
+
+
+http://localhost:4200/delete-room
+
+2. Room ID टाका → Delete Room क्लिक करा.
+
+
+3. Success/Failure message display होईल.
+
+
+
+
+---
+
+जर हवं तर पुढे मी Get Rooms By Hotel ID Page पण full Angular setup ready देऊ शकतो, ज्यात hotel-wise rooms display होतील.
+
+तुम्ही पुढे Get Rooms By Hotel setup करायचं का?
+
+
+
+
+
+
+
 छान! 😎 मग पुढे Update Room Page तयार करू, ज्यात तुला backend चा PUT /api/rooms/{id} route Angular frontend मध्ये fully work करणारा setup मिळेल — TS + HTML + CSS सहित.
 
 
