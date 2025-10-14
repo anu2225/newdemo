@@ -1,4 +1,70 @@
-अरे बरोबर, मी तुला आता तुमच्या existing code structure वर आधारित full working role-based Hotel List + Update workflow step-by-step तयार करून देतो. हे plug-and-play आहे आणि user/manager roles handle केलेले आहेत.
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { HotelService } from '../../../core/services/hotel.service';
+
+@Component({
+  selector: 'app-create-hotel',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './create-hotel.component.html',
+  styleUrls: ['./create-hotel.component.css']
+})
+export class CreateHotelComponent {
+  hotelForm: FormGroup;
+  message = '';
+
+  constructor(
+    private fb: FormBuilder,
+    private hotelService: HotelService,
+    private router: Router
+  ) {
+    this.hotelForm = this.fb.group({
+      name: ['', Validators.required],
+      location: ['', Validators.required],
+      amenities: ['', Validators.required],
+      rating: [null, [Validators.required, Validators.min(1), Validators.max(5)]]
+    });
+  }
+
+  onSubmit(): void {
+    if (this.hotelForm.invalid) {
+      this.message = 'Please fill all fields correctly!';
+      return;
+    }
+
+    const token = localStorage.getItem('token') || '';
+
+    this.hotelService.createHotel(this.hotelForm.value, token).subscribe({
+      next: () => {
+        this.message = 'Hotel created successfully!';
+        setTimeout(() => this.router.navigate(['/hotels']), 1000);
+      },
+      error: (err) => {
+        console.error(err);
+        this.message = 'Something went wrong while creating hotel!';
+      }
+    });
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+toअरे बरोबर, मी तुला आता तुमच्या existing code structure वर आधारित full working role-based Hotel List + Update workflow step-by-step तयार करून देतो. हे plug-and-play आहे आणि user/manager roles handle केलेले आहेत.
 
 
 ---
