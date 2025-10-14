@@ -1,5 +1,51 @@
 
 
+
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class HotelService {
+  private apiUrl = 'http://localhost:8080/api/hotels';
+
+  constructor(private http: HttpClient) {}
+
+  // Get all hotels
+  getHotelList(): Observable<any> {
+    return this.http.get(`${this.apiUrl}`);
+  }
+
+  // Get hotel by ID
+  getHotelById(id: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${id}`);
+  }
+
+  // Update hotel by ID
+  updateHotel(id: number, hotel: any, token?: string): Observable<any> {
+    const headers = token
+      ? new HttpHeaders().set('Authorization', `Bearer ${token}`)
+      : new HttpHeaders();
+
+    return this.http.put(`${this.apiUrl}/${id}`, hotel, { headers });
+  }
+
+  // Create new hotel
+  createHotel(hotel: any, token?: string): Observable<any> {
+    const headers = token
+      ? new HttpHeaders().set('Authorization', `Bearer ${token}`)
+      : new HttpHeaders();
+
+    return this.http.post(`${this.apiUrl}`, hotel, { headers });
+  }
+}
+
+
+
+
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
