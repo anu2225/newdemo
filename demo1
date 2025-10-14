@@ -1,15 +1,49 @@
-Perfect 💪 — आता मी तुला Hotel Update Feature साठी सगळी complete files देतो — म्हणजे तू direct copy-paste करून चालवू शकशील, काही error येणार नाही.
-हे सगळं Standalone Angular structure साठी बनवलं आहे (component-based नाही).
+अरे बरोबर, मी तुला आता तुमच्या existing code structure वर आधारित full working role-based Hotel List + Update workflow step-by-step तयार करून देतो. हे plug-and-play आहे आणि user/manager roles handle केलेले आहेत.
 
 
 ---
 
-🧩 Step-by-Step Final Setup
+1️⃣ AuthService – Role Management
+
+auth.service.ts:
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class AuthService {
+  private apiUrl = 'http://localhost:8080/api/auth';
+  private currentRole: string = 'USER'; // default
+
+  constructor(private http: HttpClient) {}
+
+  login(credentials: {email: string, password: string}): Observable<any> {
+    return this.http.post(`${this.apiUrl}/login`, credentials);
+  }
+
+  setRole(role: string) {
+    this.currentRole = role;
+    localStorage.setItem('role', role);
+  }
+
+  getRole(): string {
+    return this.currentRole || localStorage.getItem('role') || 'USER';
+  }
+
+  isManager(): boolean {
+    return this.getRole().toLowerCase() === 'manager';
+  }
+}
 
 
 ---
 
-1️⃣ hotel.service.ts
+2️⃣ HotelService – API Calls
+
+hotel.service.ts:
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
@@ -23,17 +57,14 @@ export class HotelService {
 
   constructor(private http: HttpClient) {}
 
-  // Get all hotels
   getHotelList(): Observable<any> {
     return this.http.get(`${this.apiUrl}`);
   }
 
-  // Get hotel by ID
   getHotelById(id: number): Observable<any> {
     return this.http.get(`${this.apiUrl}/${id}`);
   }
 
-  // Update hotel by ID
   updateHotel(id: number, hotel: any): Observable<any> {
     return this.http.put(`${this.apiUrl}/${id}`, hotel);
   }
@@ -42,7 +73,110 @@ export class HotelService {
 
 ---
 
-2️⃣ update-hotel.component.ts
+3️⃣ GetAllHotelsComponent – Role Based
+
+get-all-hotels.component.ts:
+
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterModule, Router } from '@angular/router';
+import { HotelService } from '../services/hotel.service';
+import { AuthService } from '../services/auth.service';
+
+@Component({
+  selector: 'app-get-all-hotels',
+  standalone: true,
+  imports: [CommonModule, RouterModule],
+  templateUrl: './get-all-hotels.component.html',
+  styleUrls: ['./get-all-hotels.component.css']
+})
+export class GetAllHotelsComponent implements OnInit {
+  hotels: any[] = [];
+  loading = true;
+  error = '';
+  role = '';
+
+  constructor(
+    private hotelService: HotelService,
+    private authService: AuthService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.role = this.authService.getRole();
+    this.getHotels();
+  }
+
+  getHotels() {
+    this.hotelService.getHotelList().subscribe({
+      next: (data) => {
+        this.hotels = data;
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = 'Error fetching hotels';
+        console.error(err);
+        this.loading = false;
+      }
+    });
+  }
+
+  editHotel(id: number) {
+    if (this.authService.isManager()) {
+      this.router.navigate(['/update-hotel', id]);
+    } else {
+      alert('Only Manager can update hotels!');
+    }
+  }
+}
+
+
+---
+
+4️⃣ GetAllHotels HTML
+
+get-all-hotels.component.html:
+
+<div class="hotel-container">
+  <h2>Hotel List</h2>
+
+  <div *ngIf="loading">Loading hotels...</div>
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <table *ngIf="!loading && hotels.length > 0">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Location</th>
+        <th>Amenities</th>
+        <th>Rating</th>
+        <th *ngIf="role.toLowerCase() === 'manager'">Manager ID</th>
+        <th *ngIf="role.toLowerCase() === 'manager'">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let h of hotels">
+        <td>{{ h.name }}</td>
+        <td>{{ h.location }}</td>
+        <td>{{ h.amenities }}</td>
+        <td>{{ h.rating }}</td>
+        <td *ngIf="role.toLowerCase() === 'manager'">{{ h.managerId }}</td>
+        <td *ngIf="role.toLowerCase() === 'manager'">
+          <button (click)="editHotel(h.hotelId)">Update</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p *ngIf="!loading && hotels.length === 0">No hotels found!</p>
+</div>
+
+
+---
+
+5️⃣ UpdateHotelComponent
+
+update-hotel.component.ts:
 
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -77,13 +211,12 @@ export class UpdateHotelComponent implements OnInit {
       rating: ['', [Validators.required, Validators.min(1), Validators.max(5)]]
     });
 
-    // Get hotel ID from route
     this.hotelId = Number(this.route.snapshot.paramMap.get('id'));
 
     if (this.hotelId) {
       this.hotelService.getHotelById(this.hotelId).subscribe({
         next: (data) => this.updateForm.patchValue(data),
-        error: (err) => console.log('Error fetching hotel', err)
+        error: (err) => console.error('Error fetching hotel', err)
       });
     }
   }
@@ -107,7 +240,9 @@ export class UpdateHotelComponent implements OnInit {
 
 ---
 
-3️⃣ update-hotel.component.html
+6️⃣ UpdateHotel HTML
+
+update-hotel.component.html:
 
 <div class="update-container">
   <h2>Update Hotel Details</h2>
@@ -142,73 +277,13 @@ export class UpdateHotelComponent implements OnInit {
 
 ---
 
-4️⃣ update-hotel.component.css
+✅ 7️⃣ App Routes
 
-.update-container {
-  width: 400px;
-  margin: 60px auto;
-  padding: 25px;
-  border: 2px solid #ddd;
-  border-radius: 10px;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-h2 {
-  text-align: center;
-  color: #333;
-}
-
-.form-group {
-  margin-bottom: 15px;
-}
-
-label {
-  font-weight: bold;
-  display: block;
-  margin-bottom: 5px;
-}
-
-input {
-  width: 100%;
-  padding: 8px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-
-button {
-  width: 100%;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 15px;
-}
-
-button:disabled {
-  background-color: #aaa;
-}
-
-.message {
-  text-align: center;
-  margin-top: 10px;
-  color: green;
-}
-
-
----
-
-5️⃣ app.routes.ts
-
-> ही route तुझ्या main route फाईलमध्ये टाक.
-
-
+app.routes.ts:
 
 import { Routes } from '@angular/router';
+import { GetAllHotelsComponent } from './get-all-hotels/get-all-hotels.component';
 import { UpdateHotelComponent } from './update-hotel/update-hotel.component';
-import { GetAllHotelsComponent } from './get-all-hotels/get-all-hotels.component'; // तुझं existing component
 
 export const routes: Routes = [
   { path: 'hotels', component: GetAllHotelsComponent },
@@ -219,16 +294,22 @@ export const routes: Routes = [
 
 ---
 
-⚙️ Final Flow
+💡 Logic Summary
 
-✅ Step 1: Manager login होईल.
-✅ Step 2: “Hotels” list मधून Edit / Update वर क्लिक केल्यावर → /update-hotel/:id route वर जाईल.
-✅ Step 3: Form मध्ये hotel info दिसेल → user edit करून Update Hotel वर क्लिक करेल.
-✅ Step 4: PUT API call जाईल backend /api/hotels/{id} ला आणि MySQL मधे update होईल.
-✅ Step 5: Success message दिसेल आणि /hotels ला redirect होईल.
+1. User login → role = user → View only hotel list
+
+
+2. Manager login → role = manager → View + Update hotels
+
+
+3. Click Update → /update-hotel/:id route → form pre-filled → update → PUT API → database updated → redirect back to hotel list.
+
+
 
 
 ---
 
-हवं का आता मी हे code backend सोबत Swagger वर test कसं करायचं ते पण step-by-step सांगू? (म्हणजे तुला confirm होईल की connection काम करतंय का नाही?)
+जर हवं असेल, मी तुला आता Swagger + Postman वापरून backend verify करून plug-and-play flow ready करायला step-by-step दाखवतो, जेणेकरून Angular+Spring Boot connection perfect काम करेल.
+
+तुम्ही हवं ते करतो का?
 
