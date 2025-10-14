@@ -1,3 +1,10 @@
+ठीक आहे, Anurag. तुला get all rooms functionality हवी आहे backend DTOs (RoomRequestDTO + RoomResponseDTO) सोबत आणि frontend मध्ये hotel-wise + type-wise summary nit तयार करायचे आहे. मी तुला full code step-by-step देतो, backend DTOs nit map करून Angular component + service ready-to-use style मध्ये.
+
+
+---
+
+1️⃣ RoomService (Angular)
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -14,118 +21,11 @@ export class RoomService {
   constructor(private http: HttpClient) {}
 
   // Get all rooms
-  getAllRooms(): Observable<Room[]> {
-    return this.http.get<Room[]>(this.apiUrl);
-  }
-
-  // Get room by id
-  getRoomById(id: number): Observable<Room> {
-    return this.http.get<Room>(`${this.apiUrl}/${id}`);
-  }
-
-  // Create room (with token for auth if required)
-  createRoom(roomData: Room, token?: string): Observable<Room> {
-    let headers = new HttpHeaders();
-    if (token) {
-      headers = headers.set('Authorization', `Bearer ${token}`);
-    }
-    return this.http.post<Room>(this.apiUrl, roomData, { headers });
-  }
-
-  // Update room
-  updateRoom(id: number, roomData: Room, token?: string): Observable<Room> {
-    let headers = new HttpHeaders();
-    if (token) {
-      headers = headers.set('Authorization', `Bearer ${token}`);
-    }
-    return this.http.put<Room>(`${this.apiUrl}/${id}`, roomData, { headers });
-  }
-
-  // Delete room
-  deleteRoom(id: number, token?: string): Observable<any> {
-    let headers = new HttpHeaders();
-    if (token) {
-      headers = headers.set('Authorization', `Bearer ${token}`);
-    }
-    return this.http.delete(`${this.apiUrl}/${id}`, { headers });
-  }
-
-  // Get rooms by hotel
-  getRoomsByHotel(hotelId: number): Observable<Room[]> {
-    const params = new HttpParams().set('hotelId', hotelId.toString());
-    return this.http.get<Room[]>(`${this.apiUrl}/filter`, { params });
-  }
-
-  // Get all hotels for dropdown
-  getAllHotels(): Observable<any[]> {
-    return this.http.get<any[]>(this.hotelApiUrl);
-  }
-}
-
-
-
-
-
-
-ठीक आहे, Anurag. तू म्हणतोयस की RoomService मध्ये HotelService style maintain करायचे आहे म्हणजे coding style, imports, headers, token handling, HttpParams सगळं HotelService प्रमाणे असेल.
-
-मी तुला RoomService full, HotelService reference style मध्ये ready-to-use देतो:
-
-
----
-
-room.service.ts (HotelService style)
-
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { Room } from '../models/room.model'; // Adjust path as per your project
-
-@Injectable({
-  providedIn: 'root'
-})
-export class RoomService {
-
-  private apiUrl = 'http://localhost:8080/api/rooms';
-  private hotelApiUrl = 'http://localhost:8080/api/hotels';
-
-  constructor(private http: HttpClient) {}
-
-  // Get all rooms
   getRoomList(): Observable<Room[]> {
     return this.http.get<Room[]>(`${this.apiUrl}`);
   }
 
-  // Get room by id
-  getRoomById(id: number): Observable<Room> {
-    return this.http.get<Room>(`${this.apiUrl}/${id}`);
-  }
-
-  // Create a room with optional token
-  createRoom(roomData: Room, token?: string): Observable<Room> {
-    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    return this.http.post<Room>(`${this.apiUrl}`, roomData, { headers });
-  }
-
-  // Update room
-  updateRoom(id: number, roomData: Room, token?: string): Observable<Room> {
-    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    return this.http.put<Room>(`${this.apiUrl}/${id}`, roomData, { headers });
-  }
-
-  // Delete room
-  deleteRoom(id: number, token?: string): Observable<any> {
-    const headers = token ? new HttpHeaders({ Authorization: `Bearer ${token}` }) : undefined;
-    return this.http.delete(`${this.apiUrl}/${id}`, { headers });
-  }
-
-  // Get rooms by hotel (filter)
-  filterRoomsByHotel(hotelId: number): Observable<Room[]> {
-    const params = new HttpParams().set('hotelId', hotelId.toString());
-    return this.http.get<Room[]>(`${this.apiUrl}/filter`, { params });
-  }
-
-  // Get all hotels (for dropdown)
+  // Optional: Get all hotels (for mapping hotelId → name)
   getHotelList(): Observable<any[]> {
     return this.http.get<any[]>(`${this.hotelApiUrl}`);
   }
@@ -134,28 +34,128 @@ export class RoomService {
 
 ---
 
-Key Points
+2️⃣ RoomComponent (Angular)
 
-1. Method names HotelService style ठेवले (getRoomList(), filterRoomsByHotel() etc).
+import { Component, OnInit } from '@angular/core';
+import { RoomService } from '../../../services/roomservice';
+import { Room } from '../../../models/room.model';
+
+@Component({
+  selector: 'app-room',
+  templateUrl: './room.html',
+  styleUrls: ['./room.css']
+})
+export class RoomComponent implements OnInit {
+
+  rooms: Room[] = [];
+  hotelSummary: any[] = [];
+  hotels: any[] = [];
+
+  constructor(private roomService: RoomService) {}
+
+  ngOnInit(): void {
+    this.loadRooms();
+    this.loadHotels();
+  }
+
+  loadRooms() {
+    this.roomService.getRoomList().subscribe({
+      next: (res) => {
+        this.rooms = res;
+        this.generateSummary();
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
+  loadHotels() {
+    this.roomService.getHotelList().subscribe({
+      next: (res) => this.hotels = res,
+      error: (err) => console.error(err)
+    });
+  }
+
+  generateSummary() {
+    const summary: any = {};
+
+    this.rooms.forEach(room => {
+      const hotelId = room.hotelId;
+      const type = room.type;
+
+      if (!summary[hotelId]) summary[hotelId] = {};
+      if (!summary[hotelId][type]) summary[hotelId][type] = 0;
+
+      summary[hotelId][type]++;
+    });
+
+    // Convert object to array for template + include hotel name if available
+    this.hotelSummary = Object.keys(summary).map(hotelId => {
+      const hotelName = this.hotels.find(h => h.id == +hotelId)?.name || `Hotel ${hotelId}`;
+      return {
+        hotelId,
+        hotelName,
+        types: Object.keys(summary[hotelId]).map(type => ({
+          type,
+          count: summary[hotelId][type]
+        }))
+      };
+    });
+  }
+
+}
 
 
-2. Headers + token handling exactly same (HttpHeaders + optional token).
+---
+
+3️⃣ Template (room.html)
+
+<h2>Rooms Summary by Hotel</h2>
+
+<div *ngFor="let hotel of hotelSummary">
+  <h3>{{hotel.hotelName}}</h3>
+  <ul>
+    <li *ngFor="let t of hotel.types">
+      {{t.type}} : {{t.count}}
+    </li>
+  </ul>
+</div>
 
 
-3. Backend /api/rooms + /api/hotels nit mapping.
+---
+
+4️⃣ Room Model (room.model.ts)
+
+export interface Room {
+  roomId?: number;      // matches RoomResponseDTO.roomId
+  type: string;
+  price: number;
+  availability: boolean;
+  features: string;
+  hotelId: number;
+}
 
 
-4. GET all rooms → getRoomList() call करायचा.
+---
+
+✅ Notes
+
+1. Room interface nit RoomResponseDTO fields map केली आहेत.
+
+
+2. getRoomList() call backend /api/rooms → returns RoomResponseDTO[].
+
+
+3. generateSummary() hotel-wise + type-wise count तयार करतो.
+
+
+4. Optional: getHotelList() call करून hotel name map केली.
 
 
 
 
 ---
 
-जर हवे तर मी पुढे RoomComponent + HTML + CSS सुद्धा HotelService style nit ready करून देऊ शकतो, फक्त create + list करेल backend सोबत.
+तुला हवे तर मी Room create + edit + delete सुद्धा HotelService style ready-to-use Angular component nit देऊ शकतो, जे full CRUD backend सोबत nit काम करेल.
 
-तुला ते हवे का?
-
-
-
+तू ready आहेस का मी ते देऊ?
 
