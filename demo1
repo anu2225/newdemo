@@ -1,4 +1,243 @@
-ठीक आहे! 🚀 आता आपण तयार करू Filter Rooms Page — ज्यात user specific criteria (उदा. availability, price, hotel) वापरून rooms filter करू शकतो backend च्या GET /api/rooms/filter किंवा GET /api/rooms/available routes वापरून.
+ठी
+
+ठीक आहे! 🚀 मग मी तुला तयार करून देतो Angular side safe filter component जे min/max price नुसार rooms filter करेल आणि backend 500 error येणार नाही.
+
+
+---
+
+Filter Rooms by Price Component
+
+Folder Structure
+
+features/room/filter-rooms/
+ ├─ filter-rooms.component.ts
+ ├─ filter-rooms.component.html
+ ├─ filter-rooms.component.css
+
+
+---
+
+1️⃣ filter-rooms.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { RoomService } from '../../../core/services/roomservice';
+import { Room } from '../../../core/models/room.model';
+
+@Component({
+  selector: 'app-filter-rooms',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './filter-rooms.component.html',
+  styleUrls: ['./filter-rooms.component.css']
+})
+export class FilterRoomsComponent implements OnInit {
+  filterForm!: FormGroup;
+  filteredRooms: Room[] = [];
+  errorMessage = '';
+
+  constructor(private fb: FormBuilder, private roomService: RoomService) {}
+
+  ngOnInit(): void {
+    this.filterForm = this.fb.group({
+      minPrice: [''],
+      maxPrice: ['']
+    });
+  }
+
+  filterRooms(): void {
+    const min = this.filterForm.value.minPrice;
+    const max = this.filterForm.value.maxPrice;
+
+    if (min == null || max == null) {
+      this.errorMessage = 'Please enter both min and max price.';
+      this.filteredRooms = [];
+      return;
+    }
+
+    this.roomService.filterRoomsByPrice(min, max).subscribe({
+      next: (rooms) => {
+        this.filteredRooms = rooms;
+        this.errorMessage = '';
+      },
+      error: () => {
+        this.filteredRooms = [];
+        this.errorMessage = 'No rooms found for the given price range.';
+      }
+    });
+  }
+}
+
+
+---
+
+2️⃣ filter-rooms.component.html
+
+<div class="filter-rooms-container">
+  <h2>Filter Rooms by Price</h2>
+
+  <form [formGroup]="filterForm" (ngSubmit)="filterRooms()">
+    <div class="form-group">
+      <label>Min Price:</label>
+      <input type="number" formControlName="minPrice" placeholder="Min Price" />
+    </div>
+
+    <div class="form-group">
+      <label>Max Price:</label>
+      <input type="number" formControlName="maxPrice" placeholder="Max Price" />
+    </div>
+
+    <button type="submit">Filter</button>
+  </form>
+
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div *ngIf="filteredRooms.length > 0" class="room-list">
+    <h3>Filtered Rooms</h3>
+    <ul>
+      <li *ngFor="let room of filteredRooms">
+        <strong>ID:</strong> {{ room.roomId }},
+        <strong>Type:</strong> {{ room.type }},
+        <strong>Price:</strong> {{ room.price }},
+        <strong>Availability:</strong> {{ room.availability ? 'Yes' : 'No' }},
+        <strong>Hotel ID:</strong> {{ room.hotelId }}
+      </li>
+    </ul>
+  </div>
+</div>
+
+
+---
+
+3️⃣ filter-rooms.component.css
+
+.filter-rooms-container {
+  max-width: 400px;
+  margin: 40px auto;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.1);
+  background-color: #fff;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #138496;
+}
+
+.error {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+}
+
+.room-list {
+  margin-top: 20px;
+  border-top: 1px solid #ddd;
+  padding-top: 15px;
+}
+
+.room-list ul {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.room-list li {
+  margin-bottom: 8px;
+  padding: 6px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+
+---
+
+4️⃣ RoomService.ts method
+
+filterRoomsByPrice(min: number, max: number): Observable<Room[]> {
+  const params = new HttpParams()
+    .set('min', min.toString())
+    .set('max', max.toString());
+  return this.http.get<Room[]>(`${this.apiUrl}/filter`, { params });
+}
+
+
+---
+
+5️⃣ Routing (app.routes.ts)
+
+{ path: 'filter-rooms', component: FilterRoomsComponent }
+
+
+---
+
+✅ Usage
+
+1. Browser मध्ये जा:
+
+
+
+http://localhost:4200/filter-rooms
+
+2. Min & Max Price टाका → Filter क्लिक करा.
+
+
+3. Backend-safe filtered rooms list display होईल.
+
+
+
+
+---
+
+जर हवे तर मी पुढे तुला Hotel-wise Room Filter page पण देऊ शकतो, ज्यात hotelId नुसार rooms filter होतील आणि 500 error येणार नाही.
+
+तुला ते करायचं का?
+
+
+
+
+
+
+
+
+
+
+
+
+क आहे! 🚀 आता आपण तयार करू Filter Rooms Page — ज्यात user specific criteria (उदा. availability, price, hotel) वापरून rooms filter करू शकतो backend च्या GET /api/rooms/filter किंवा GET /api/rooms/available routes वापरून.
 
 
 ---
