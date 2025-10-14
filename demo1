@@ -1,3 +1,199 @@
+बरोबर! 🙂 आपण step-by-step, full Angular frontend setup देऊ — प्रत्येक backend route साठी TS + HTML + CSS ready-to-run.
+
+आपण सुरु करू Get Room By ID पासून.
+
+
+---
+
+1️⃣ Get Room By ID Page
+
+Folder Structure
+
+features/room/get-room/
+ ├─ get-room.component.ts
+ ├─ get-room.component.html
+ ├─ get-room.component.css
+
+
+---
+
+1. get-room.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { RoomService } from '../../../core/services/roomservice';
+import { Room } from '../../../core/models/room.model';
+
+@Component({
+  selector: 'app-get-room',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './get-room.component.html',
+  styleUrls: ['./get-room.component.css']
+})
+export class GetRoomComponent implements OnInit {
+  roomForm!: FormGroup;
+  roomDetails: Room | null = null;
+  errorMessage = '';
+
+  constructor(private fb: FormBuilder, private roomService: RoomService) {}
+
+  ngOnInit(): void {
+    this.roomForm = this.fb.group({
+      id: [null, [Validators.required, Validators.min(1)]]
+    });
+  }
+
+  fetchRoom(): void {
+    if (this.roomForm.valid) {
+      const roomId = this.roomForm.value.id;
+      this.roomService.getRoomById(roomId).subscribe({
+        next: (room) => {
+          this.roomDetails = room;
+          this.errorMessage = '';
+        },
+        error: () => {
+          this.roomDetails = null;
+          this.errorMessage = 'Room not found.';
+        }
+      });
+    }
+  }
+}
+
+
+---
+
+2. get-room.component.html
+
+<div class="get-room-container">
+  <h2>Get Room By ID</h2>
+
+  <form [formGroup]="roomForm" (ngSubmit)="fetchRoom()">
+    <div class="form-group">
+      <label>Room ID:</label>
+      <input type="number" formControlName="id" placeholder="Enter Room ID" />
+    </div>
+
+    <button type="submit" [disabled]="roomForm.invalid">Fetch Room</button>
+  </form>
+
+  <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  <div *ngIf="roomDetails" class="room-details">
+    <h3>Room Details</h3>
+    <p><strong>Room ID:</strong> {{ roomDetails.roomId }}</p>
+    <p><strong>Type:</strong> {{ roomDetails.type }}</p>
+    <p><strong>Price:</strong> {{ roomDetails.price }}</p>
+    <p><strong>Availability:</strong> {{ roomDetails.availability ? 'Available' : 'Not Available' }}</p>
+    <p><strong>Features:</strong> {{ roomDetails.features }}</p>
+    <p><strong>Hotel ID:</strong> {{ roomDetails.hotelId }}</p>
+  </div>
+</div>
+
+
+---
+
+3. get-room.component.css
+
+.get-room-container {
+  max-width: 450px;
+  margin: 40px auto;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.1);
+  background-color: #fff;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.error {
+  color: red;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.room-details {
+  margin-top: 20px;
+  border-top: 1px solid #ddd;
+  padding-top: 15px;
+}
+
+.room-details p {
+  margin: 5px 0;
+}
+
+
+---
+
+4️⃣ RoomService.ts Method
+
+getRoomById(id: number): Observable<Room> {
+  return this.http.get<Room>(`${this.apiUrl}/${id}`);
+}
+
+
+---
+
+5️⃣ Routing (app.routes.ts)
+
+{ path: 'get-room', component: GetRoomComponent }
+
+
+---
+
+✅ आता browser मध्ये जा:
+
+http://localhost:4200/get-room
+
+Room ID द्या → Fetch Room
+
+Response display होईल.
+
+
+
+---
+
+तुला हवं तर पुढे 2️⃣ Update Room Page setup देतो TS + HTML + CSS पूर्ण style मध्ये.
+
+देऊ का पुढे Update Room?
+
 
 
 
