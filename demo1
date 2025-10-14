@@ -1,49 +1,21 @@
-ठीक आहे, Anurag. तुला get all rooms functionality हवी आहे backend DTOs (RoomRequestDTO + RoomResponseDTO) सोबत आणि frontend मध्ये hotel-wise + type-wise summary nit तयार करायचे आहे. मी तुला full code step-by-step देतो, backend DTOs nit map करून Angular component + service ready-to-use style मध्ये.
+Ah, perfect Anurag. मग आपल्याला RoomComponent फक्त get all rooms + hotel-wise type summary हवे, create/edit/delete नाही. मी तुला nit ready-to-use clean component देतो.
 
 
 ---
 
-1️⃣ RoomService (Angular)
-
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { Room } from '../models/room.model';
-
-@Injectable({
-  providedIn: 'root'
-})
-export class RoomService {
-
-  private apiUrl = 'http://localhost:8080/api/rooms';
-  private hotelApiUrl = 'http://localhost:8080/api/hotels';
-
-  constructor(private http: HttpClient) {}
-
-  // Get all rooms
-  getRoomList(): Observable<Room[]> {
-    return this.http.get<Room[]>(`${this.apiUrl}`);
-  }
-
-  // Optional: Get all hotels (for mapping hotelId → name)
-  getHotelList(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.hotelApiUrl}`);
-  }
-}
-
-
----
-
-2️⃣ RoomComponent (Angular)
+room.component.ts (Get All Rooms Only)
 
 import { Component, OnInit } from '@angular/core';
-import { RoomService } from '../../../services/roomservice';
-import { Room } from '../../../models/room.model';
+import { CommonModule } from '@angular/common'; // for *ngFor, *ngIf
+import { RoomService } from '../../../core/services/roomservice';
+import { Room } from '../../../core/models/room.model';
 
 @Component({
   selector: 'app-room',
   templateUrl: './room.html',
-  styleUrls: ['./room.css']
+  styleUrls: ['./room.css'],
+  standalone: true,               // optional, if using standalone component
+  imports: [CommonModule]
 })
 export class RoomComponent implements OnInit {
 
@@ -64,14 +36,14 @@ export class RoomComponent implements OnInit {
         this.rooms = res;
         this.generateSummary();
       },
-      error: (err) => console.error(err)
+      error: (err) => console.error('Error loading rooms:', err)
     });
   }
 
   loadHotels() {
     this.roomService.getHotelList().subscribe({
       next: (res) => this.hotels = res,
-      error: (err) => console.error(err)
+      error: (err) => console.error('Error loading hotels:', err)
     });
   }
 
@@ -88,7 +60,6 @@ export class RoomComponent implements OnInit {
       summary[hotelId][type]++;
     });
 
-    // Convert object to array for template + include hotel name if available
     this.hotelSummary = Object.keys(summary).map(hotelId => {
       const hotelName = this.hotels.find(h => h.id == +hotelId)?.name || `Hotel ${hotelId}`;
       return {
@@ -101,13 +72,12 @@ export class RoomComponent implements OnInit {
       };
     });
   }
-
 }
 
 
 ---
 
-3️⃣ Template (room.html)
+room.html (List View Only)
 
 <h2>Rooms Summary by Hotel</h2>
 
@@ -123,39 +93,105 @@ export class RoomComponent implements OnInit {
 
 ---
 
-4️⃣ Room Model (room.model.ts)
+✅ Features of This Setup
 
-export interface Room {
-  roomId?: number;      // matches RoomResponseDTO.roomId
-  type: string;
-  price: number;
-  availability: boolean;
-  features: string;
-  hotelId: number;
+1. Backend /api/rooms call करून rooms fetch करतो.
+
+
+2. /api/hotels call करून hotelId → hotelName map करतो.
+
+
+3. Hotel-wise + type-wise room count summary तयार करतो.
+
+
+4. फक्त list/fetch, create/edit/delete नाही.
+
+
+5. *ngFor works because CommonModule included.
+
+
+
+
+---
+
+जर तुला हवे तर मी hotelId + type summary साठी sortable table UI + CSS सुद्धा तयार करून देऊ शकतो, जे professional दिसेल.
+
+मग तयार करू का मी ते देऊ?
+
+
+
+ठीक आहे, Anurag. मी तुला simple पण clean CSS देतो, जे RoomComponent summary view साठी perfect आहे.
+
+
+---
+
+room.css
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #2c3e50;
+    font-family: 'Arial', sans-serif;
+}
+
+h3 {
+    background-color: #3498db;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    margin-top: 15px;
+    font-family: 'Arial', sans-serif;
+}
+
+ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin-bottom: 20px;
+}
+
+li {
+    background-color: #ecf0f1;
+    margin: 5px 0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: 'Arial', sans-serif;
+    font-size: 14px;
+}
+
+div {
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 
 ---
 
-✅ Notes
+Features of This CSS
 
-1. Room interface nit RoomResponseDTO fields map केली आहेत.
-
-
-2. getRoomList() call backend /api/rooms → returns RoomResponseDTO[].
+1. Center-aligned heading (h2)
 
 
-3. generateSummary() hotel-wise + type-wise count तयार करतो.
+2. Hotel name (h3) with blue background + white text
 
 
-4. Optional: getHotelList() call करून hotel name map केली.
+3. Room type list clean, rounded gray boxes (li)
+
+
+4. Content centered with max-width → professional look
+
+
+5. Easy to customize colors/fonts if needed
 
 
 
 
 ---
 
-तुला हवे तर मी Room create + edit + delete सुद्धा HotelService style ready-to-use Angular component nit देऊ शकतो, जे full CRUD backend सोबत nit काम करेल.
+तुमच्या RoomComponent सोबत copy-paste केल्यावर summary clean, readable आणि responsive दिसेल.
 
-तू ready आहेस का मी ते देऊ?
+जर तुला हवे तर मी तुला hover effect + count highlight style देखील add करून देऊ शकतो, जे table सारखे UI देईल.
+
+मग तयार करू का मी ते?
+
+
 
