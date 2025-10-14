@@ -1,84 +1,65 @@
-
-
-
-
-
-
-
-
-
-अरे ठीक आहे! 😎
-तुला backend बदलायची गरज नाही, तर Angular मध्ये rating filter logic adjust करायचो. म्हणजे backend /filter endpoint जसाच आहे तसाच राहील आणि Angular GET call योग्य प्रकारे जाईल.
+Perfect! चल, Anurag. मी तुला Room module Angular frontend reactive form + backend integration step-by-step setup देतो, SmartHotelBookingSystem मध्ये, all naming exactly as you want (room.ts, room.html, room.css).
 
 
 ---
 
-🔹 HotelService.ts (Angular) – URL match fix
-
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
-@Injectable({
-  providedIn: 'root'
-})
-export class HotelService {
-  private apiUrl = 'http://localhost:8080/api/hotels';
-
-  constructor(private http: HttpClient) {}
-
-  // Filter hotels by rating
-  filterHotelsByRating(minRating: number): Observable<any> {
-    // Important: ensure proper param name "minRating" and query string format
-    const params = new HttpParams().set('minRating', minRating.toString());
-    return this.http.get(`${this.apiUrl}/filter`, { params });
-  }
-}
-
-
----
-
-🔹 filter-hotel.component.ts
+1️⃣ room.ts (Component)
 
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { HotelService } from '../services/hotel.service';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { RoomService } from '../services/room.service';
+import { Room } from '../models/room';
 
 @Component({
-  selector: 'app-filter-hotel',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './filter-hotel.component.html',
-  styleUrls: ['./filter-hotel.component.css']
+  selector: 'app-room',
+  templateUrl: './room.html',
+  styleUrls: ['./room.css']
 })
-export class FilterHotelComponent implements OnInit {
-  filterForm!: FormGroup;
-  hotels: any[] = [];
-  message = '';
+export class RoomComponent implements OnInit {
 
-  constructor(private fb: FormBuilder, private hotelService: HotelService) {}
+  roomForm!: FormGroup;
+  rooms: Room[] = [];
+  hotels: any[] = []; // To populate hotel dropdown
+
+  constructor(private fb: FormBuilder, private roomService: RoomService) {}
 
   ngOnInit(): void {
-    this.filterForm = this.fb.group({
-      minRating: ['']
+    this.roomForm = this.fb.group({
+      roomNumber: ['', Validators.required],
+      type: ['', Validators.required],
+      pricePerNight: ['', [Validators.required, Validators.min(0)]],
+      isAvailable: [true],
+      hotelId: ['', Validators.required]
+    });
+
+    this.loadRooms();
+    this.loadHotels();
+  }
+
+  loadRooms() {
+    this.roomService.getAllRooms().subscribe({
+      next: (res) => this.rooms = res,
+      error: (err) => console.error('Error loading rooms', err)
     });
   }
 
-  onFilterByRating(): void {
-    const minRating = this.filterForm.value.minRating;
-    if (!minRating) return;
+  loadHotels() {
+    this.roomService.getAllHotels().subscribe({
+      next: (res) => this.hotels = res,
+      error: (err) => console.error('Error loading hotels', err)
+    });
+  }
 
-    // Angular GET call with query param
-    this.hotelService.filterHotelsByRating(minRating).subscribe({
+  submitRoom() {
+    if (this.roomForm.invalid) return;
+
+    this.roomService.createRoom(this.roomForm.value).subscribe({
       next: (res) => {
-        this.hotels = res;
-        this.message = this.hotels.length === 0 ? 'No hotels found!' : '';
+        alert('Room created successfully!');
+        this.roomForm.reset();
+        this.loadRooms();
       },
-      error: (err) => {
-        console.error(err);
-        this.message = 'Error fetching hotels!';
-      }
+      error: (err) => console.error('Error creating room', err)
     });
   }
 }
@@ -86,292 +67,181 @@ export class FilterHotelComponent implements OnInit {
 
 ---
 
-🔹 filter-hotel.component.html
+2️⃣ room.html (Template)
 
-<div class="filter-container">
-  <h2>Filter Hotels by Rating</h2>
+<div class="room-container">
+  <h2>Create Room</h2>
+  <form [formGroup]="roomForm" (ngSubmit)="submitRoom()">
 
-  <form [formGroup]="filterForm" (ngSubmit)="onFilterByRating()">
-    <div class="form-group">
-      <label>Minimum Rating (1-5):</label>
-      <input formControlName="minRating" type="number" placeholder="Enter rating" />
-    </div>
+    <label>Room Number</label>
+    <input type="text" formControlName="roomNumber">
 
-    <button type="submit">Filter</button>
+    <label>Type</label>
+    <select formControlName="type">
+      <option value="Single">Single</option>
+      <option value="Double">Double</option>
+      <option value="Suite">Suite</option>
+    </select>
+
+    <label>Price Per Night</label>
+    <input type="number" formControlName="pricePerNight">
+
+    <label>Availability</label>
+    <input type="checkbox" formControlName="isAvailable">
+
+    <label>Hotel</label>
+    <select formControlName="hotelId">
+      <option *ngFor="let hotel of hotels" [value]="hotel.id">{{hotel.name}}</option>
+    </select>
+
+    <button type="submit" [disabled]="roomForm.invalid">Save Room</button>
   </form>
 
-  <p class="message">{{ message }}</p>
+  <hr>
 
-  <table *ngIf="hotels.length > 0">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Location</th>
-        <th>Amenities</th>
-        <th>Rating</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let hotel of hotels">
-        <td>{{ hotel.name }}</td>
-        <td>{{ hotel.location }}</td>
-        <td>{{ hotel.amenities }}</td>
-        <td>{{ hotel.rating }}</td>
-      </tr>
-    </tbody>
+  <h2>All Rooms</h2>
+  <table>
+    <tr>
+      <th>ID</th>
+      <th>Number</th>
+      <th>Type</th>
+      <th>Price</th>
+      <th>Available</th>
+      <th>Hotel</th>
+    </tr>
+    <tr *ngFor="let room of rooms">
+      <td>{{room.id}}</td>
+      <td>{{room.roomNumber}}</td>
+      <td>{{room.type}}</td>
+      <td>{{room.pricePerNight}}</td>
+      <td>{{room.isAvailable}}</td>
+      <td>{{room.hotelId}}</td>
+    </tr>
   </table>
 </div>
 
 
 ---
 
-🔹 filter-hotel.component.css
+3️⃣ room.css (Styling)
 
-.filter-container {
-  width: 400px;
-  margin: 50px auto;
-  padding: 20px;
-  border: 2px solid #ddd;
-  border-radius: 10px;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+.room-container {
+  max-width: 600px;
+  margin: 20px auto;
 }
 
-h2 { text-align: center; color: #333; }
+form {
+  display: flex;
+  flex-direction: column;
+}
 
-.form-group { margin-bottom: 15px; }
-label { display: block; font-weight: bold; margin-bottom: 5px; }
-input { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
+label {
+  margin-top: 10px;
+}
+
+input, select {
+  padding: 5px;
+  margin-bottom: 10px;
+}
 
 button {
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
+  width: 150px;
+  padding: 8px;
   background-color: #007bff;
   color: white;
+  border: none;
   cursor: pointer;
 }
 
-button:hover { background-color: #005663; }
-
-.message { text-align: center; margin-top: 10px; color: green; }
+button:disabled {
+  background-color: gray;
+  cursor: not-allowed;
+}
 
 table {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 15px;
+  margin-top: 20px;
 }
 
-th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
-tr:hover { background-color: #f9f9f9; }
+th, td {
+  border: 1px solid black;
+  padding: 5px;
+  text-align: left;
+}
 
 
 ---
 
-✅ यात backend काही बदललं नाही, Angular GET call query param ?minRating=X वापरत आहे.
+4️⃣ room.ts (Model)
 
-आता /filter?minRating=3 call लगेच योग्य प्रकारे backend ला जाईल आणि 500 error येणार नाही.
-
-जर हवं असेल, मी तुला combo filter (Rating + Location + Amenities) पण Angular मध्ये backend unchanged ठेवून तयार करून देऊ शकतो.
-
-तुला combo filter हवं का?
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-ठीक आहे! 😎 चला आपण Rating वर Filter Hotels साठी Angular full setup देतो – TS + HTML + CSS + Service.
+export interface Room {
+  id?: number;
+  roomNumber: string;
+  type: string;
+  pricePerNight: number;
+  isAvailable: boolean;
+  hotelId: number;
+}
 
 
 ---
 
-1️⃣ hotel.service.ts (Rating filter)
+5️⃣ room.service.ts (Backend Integration)
 
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
+import { Room } from '../models/room';
 import { Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
-export class HotelService {
-  private apiUrl = 'http://localhost:8080/api/hotels';
+export class RoomService {
+
+  private apiUrl = 'http://localhost:8080/api/rooms';
+  private hotelApiUrl = 'http://localhost:8080/api/hotels';
 
   constructor(private http: HttpClient) {}
 
-  // Filter hotels by rating
-  filterHotelsByRating(minRating: number): Observable<any> {
-    const params = new HttpParams().set('minRating', minRating.toString());
-    return this.http.get(`${this.apiUrl}/filter`, { params });
+  getAllRooms(): Observable<Room[]> {
+    return this.http.get<Room[]>(this.apiUrl);
+  }
+
+  createRoom(room: Room): Observable<Room> {
+    return this.http.post<Room>(this.apiUrl, room);
+  }
+
+  getAllHotels(): Observable<any[]> {
+    return this.http.get<any[]>(this.hotelApiUrl);
   }
 }
 
 
 ---
 
-2️⃣ filter-hotel.component.ts
+✅ Next Steps / Mapping Checkpoints:
 
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-import { HotelService } from '../services/hotel.service';
-
-@Component({
-  selector: 'app-filter-hotel',
-  standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './filter-hotel.component.html',
-  styleUrls: ['./filter-hotel.component.css']
-})
-export class FilterHotelComponent implements OnInit {
-  filterForm!: FormGroup;
-  hotels: any[] = [];
-  message = '';
-
-  constructor(private fb: FormBuilder, private hotelService: HotelService) {}
-
-  ngOnInit(): void {
-    this.filterForm = this.fb.group({
-      minRating: ['']
-    });
-  }
-
-  onFilterByRating(): void {
-    const minRating = this.filterForm.value.minRating;
-    if (!minRating) return;
-
-    this.hotelService.filterHotelsByRating(minRating).subscribe({
-      next: res => {
-        this.hotels = res;
-        this.message = this.hotels.length === 0 ? 'No hotels found!' : '';
-      },
-      error: err => {
-        console.error(err);
-        this.message = 'Error fetching hotels!';
-      }
-    });
-  }
-}
+1. Angular reactive form ready (roomForm)
 
 
----
-
-3️⃣ filter-hotel.component.html
-
-<div class="filter-container">
-  <h2>Filter Hotels by Rating</h2>
-
-  <form [formGroup]="filterForm" (ngSubmit)="onFilterByRating()">
-    <div class="form-group">
-      <label>Minimum Rating (1-5):</label>
-      <input formControlName="minRating" type="number" placeholder="Enter rating" />
-    </div>
-
-    <button type="submit">Filter</button>
-  </form>
-
-  <p class="message">{{ message }}</p>
-
-  <table *ngIf="hotels.length > 0">
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Location</th>
-        <th>Amenities</th>
-        <th>Rating</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let hotel of hotels">
-        <td>{{ hotel.name }}</td>
-        <td>{{ hotel.location }}</td>
-        <td>{{ hotel.amenities }}</td>
-        <td>{{ hotel.rating }}</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+2. Submit form → POST to backend Room endpoint
 
 
----
-
-4️⃣ filter-hotel.component.css
-
-.filter-container {
-  width: 400px;
-  margin: 50px auto;
-  padding: 20px;
-  border: 2px solid #ddd;
-  border-radius: 10px;
-  background-color: #f8f9fa;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-h2 { text-align: center; color: #333; }
-
-.form-group { margin-bottom: 15px; }
-label { display: block; font-weight: bold; margin-bottom: 5px; }
-input { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
-
-button {
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  border: none;
-  background-color: #007bff;
-  color: white;
-  cursor: pointer;
-}
-
-button:hover { background-color: #005663; }
-
-.message { text-align: center; margin-top: 10px; color: green; }
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 15px;
-}
-
-th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
-tr:hover { background-color: #f9f9f9; }
+3. Load all rooms → GET backend Room endpoint
 
 
----
-
-✅ आता flow:
-
-1. User rating input करतो → submit / filter button click.
+4. Hotel dropdown is loaded from backend Hotel endpoint
 
 
-2. Angular GET /api/hotels/filter?minRating=X call.
-
-
-3. Backend findByRatingGreaterThanEqual(minRating) वापरून hotels return करतो.
-
-
-4. Table मध्ये filtered hotels display.
+5. Table shows Room info including hotelId
 
 
 
 
 ---
 
-जर हवं, मी तुला Rating + Location + Amenities combo filter तयार करून copy-paste ready Angular + backend देऊ शकतो जे लगेच चालेल.
+Anurag, मी ह्या setup नंतर पुढे Update + Delete + Filter rooms by hotel / availability सुद्धा करू शकतो, backend mapping + frontend nit match करून.
 
-तुला मी ते तयार करून द्यावे का?
+तू हवे तर मी लगेच पुढच्या step वर देऊ का?
 
