@@ -1,3 +1,199 @@
+
+
+
+
+
+
+
+
+
+अरे ठीक आहे! 😎
+तुला backend बदलायची गरज नाही, तर Angular मध्ये rating filter logic adjust करायचो. म्हणजे backend /filter endpoint जसाच आहे तसाच राहील आणि Angular GET call योग्य प्रकारे जाईल.
+
+
+---
+
+🔹 HotelService.ts (Angular) – URL match fix
+
+import { Injectable } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class HotelService {
+  private apiUrl = 'http://localhost:8080/api/hotels';
+
+  constructor(private http: HttpClient) {}
+
+  // Filter hotels by rating
+  filterHotelsByRating(minRating: number): Observable<any> {
+    // Important: ensure proper param name "minRating" and query string format
+    const params = new HttpParams().set('minRating', minRating.toString());
+    return this.http.get(`${this.apiUrl}/filter`, { params });
+  }
+}
+
+
+---
+
+🔹 filter-hotel.component.ts
+
+import { Component, OnInit } from '@angular/core';
+import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { HotelService } from '../services/hotel.service';
+
+@Component({
+  selector: 'app-filter-hotel',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './filter-hotel.component.html',
+  styleUrls: ['./filter-hotel.component.css']
+})
+export class FilterHotelComponent implements OnInit {
+  filterForm!: FormGroup;
+  hotels: any[] = [];
+  message = '';
+
+  constructor(private fb: FormBuilder, private hotelService: HotelService) {}
+
+  ngOnInit(): void {
+    this.filterForm = this.fb.group({
+      minRating: ['']
+    });
+  }
+
+  onFilterByRating(): void {
+    const minRating = this.filterForm.value.minRating;
+    if (!minRating) return;
+
+    // Angular GET call with query param
+    this.hotelService.filterHotelsByRating(minRating).subscribe({
+      next: (res) => {
+        this.hotels = res;
+        this.message = this.hotels.length === 0 ? 'No hotels found!' : '';
+      },
+      error: (err) => {
+        console.error(err);
+        this.message = 'Error fetching hotels!';
+      }
+    });
+  }
+}
+
+
+---
+
+🔹 filter-hotel.component.html
+
+<div class="filter-container">
+  <h2>Filter Hotels by Rating</h2>
+
+  <form [formGroup]="filterForm" (ngSubmit)="onFilterByRating()">
+    <div class="form-group">
+      <label>Minimum Rating (1-5):</label>
+      <input formControlName="minRating" type="number" placeholder="Enter rating" />
+    </div>
+
+    <button type="submit">Filter</button>
+  </form>
+
+  <p class="message">{{ message }}</p>
+
+  <table *ngIf="hotels.length > 0">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Location</th>
+        <th>Amenities</th>
+        <th>Rating</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let hotel of hotels">
+        <td>{{ hotel.name }}</td>
+        <td>{{ hotel.location }}</td>
+        <td>{{ hotel.amenities }}</td>
+        <td>{{ hotel.rating }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+---
+
+🔹 filter-hotel.component.css
+
+.filter-container {
+  width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+h2 { text-align: center; color: #333; }
+
+.form-group { margin-bottom: 15px; }
+label { display: block; font-weight: bold; margin-bottom: 5px; }
+input { width: 100%; padding: 8px; border-radius: 5px; border: 1px solid #ccc; }
+
+button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover { background-color: #005663; }
+
+.message { text-align: center; margin-top: 10px; color: green; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+tr:hover { background-color: #f9f9f9; }
+
+
+---
+
+✅ यात backend काही बदललं नाही, Angular GET call query param ?minRating=X वापरत आहे.
+
+आता /filter?minRating=3 call लगेच योग्य प्रकारे backend ला जाईल आणि 500 error येणार नाही.
+
+जर हवं असेल, मी तुला combo filter (Rating + Location + Amenities) पण Angular मध्ये backend unchanged ठेवून तयार करून देऊ शकतो.
+
+तुला combo filter हवं का?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ठीक आहे! 😎 चला आपण Rating वर Filter Hotels साठी Angular full setup देतो – TS + HTML + CSS + Service.
 
 
