@@ -1,50 +1,63 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { from, Observable } from 'rxjs';
-import { HttpParams}from'@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { Room } from '../models/room.model';
 
 @Injectable({
   providedIn: 'root'
 })
-export class HotelService {
-  private apiUrl = 'http://localhost:8080/api/hotels';
+export class RoomService {
+
+  private apiUrl = 'http://localhost:8080/api/rooms';
+  private hotelApiUrl = 'http://localhost:8080/api/hotels';
 
   constructor(private http: HttpClient) {}
 
-  getHotelList(): Observable<any> {
-    return this.http.get(`${this.apiUrl}`);
+  // Get all rooms
+  getAllRooms(): Observable<Room[]> {
+    return this.http.get<Room[]>(this.apiUrl);
   }
 
-  getHotelById(id: number): Observable<any> {
-    return this.http.get(`${this.apiUrl}/${id}`);
+  // Get room by id
+  getRoomById(id: number): Observable<Room> {
+    return this.http.get<Room>(`${this.apiUrl}/${id}`);
   }
 
-  createHotel(hotelData: any, token: string): Observable<any> {
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-    return this.http.post(this.apiUrl, hotelData, { headers });
-  }
-  searchHotels(name: string): Observable<any> {
-    const params = new HttpParams().set('location', name);
-    return this.http.get(`${this.apiUrl}/search`, { params });
-  }
-  //  filterHotelsByRating(minRating: number): Observable<any> {
-  //   const params = new HttpParams().set('minRating', minRating.toString());
-  //   return this.http.get(`${this.apiUrl}/filter`, { params });
-  //  }
-
-
-  filterHotelsByRating(minRating: number): Observable<any> {
-    // Important: ensure proper param name "minRating" and query string format
-    const params = new HttpParams().set('rating', minRating.toString());
-    return this.http.get(`${this.apiUrl}/filter`, { params });
+  // Create room (with token for auth if required)
+  createRoom(roomData: Room, token?: string): Observable<Room> {
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return this.http.post<Room>(this.apiUrl, roomData, { headers });
   }
 
-  updateHotel(id: number, hotel: any): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, hotel);
-}
+  // Update room
+  updateRoom(id: number, roomData: Room, token?: string): Observable<Room> {
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return this.http.put<Room>(`${this.apiUrl}/${id}`, roomData, { headers });
+  }
 
-  deleteHotel(id: number, token: string): Observable<any> {
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
+  // Delete room
+  deleteRoom(id: number, token?: string): Observable<any> {
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
     return this.http.delete(`${this.apiUrl}/${id}`, { headers });
+  }
+
+  // Get rooms by hotel
+  getRoomsByHotel(hotelId: number): Observable<Room[]> {
+    const params = new HttpParams().set('hotelId', hotelId.toString());
+    return this.http.get<Room[]>(`${this.apiUrl}/filter`, { params });
+  }
+
+  // Get all hotels for dropdown
+  getAllHotels(): Observable<any[]> {
+    return this.http.get<any[]>(this.hotelApiUrl);
   }
 }
