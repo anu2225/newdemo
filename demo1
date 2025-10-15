@@ -1,4 +1,284 @@
 
+
+Perfect 🔥 आता Update Hotel Angular side full working code देतो — जेव्हा manager login असेल तेव्हा तो hotel info update करू शकेल.
+
+हे code पूर्ण चालेल Spring Boot backend वर (PUT /api/hotels/{id}).
+
+
+---
+
+🧩 Goal:
+
+Hotel ID टाका → जुनी माहिती form मध्ये दिसेल → update करा → “Hotel updated successfully” message येईल ✅
+
+
+---
+
+✅ Step 1: hotelservice.ts मध्ये method जोडा
+
+(/src/app/core/services/hotelservice.ts)
+
+updateHotel(id: number, hotelData: any): Observable<any> {
+  const token = localStorage.getItem('token');
+  const headers = new HttpHeaders({
+    'Authorization': `Bearer ${token}`
+  });
+  return this.http.put<any>(`${this.apiUrl}/${id}`, hotelData, { headers });
+}
+
+
+---
+
+✅ Step 2: Component तयार करा
+
+फोल्डर:
+src/app/features/hotel/update-hotel/update-hotel.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HotelService } from '../../../core/services/hotelservice';
+
+@Component({
+  selector: 'app-update-hotel',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './update-hotel.html',
+  styleUrls: ['./update-hotel.css']
+})
+export class UpdateHotelComponent {
+  hotelId!: number;
+  hotel: any = null;
+  message = '';
+  errorMessage = '';
+
+  constructor(private hotelService: HotelService) {}
+
+  // Step 1: Get Hotel by ID first
+  getHotelById() {
+    if (!this.hotelId) {
+      this.errorMessage = 'Enter a valid Hotel ID!';
+      return;
+    }
+
+    this.hotelService.getHotelById(this.hotelId).subscribe({
+      next: (data) => {
+        this.hotel = data;
+        this.message = '';
+        this.errorMessage = '';
+      },
+      error: (err) => {
+        this.hotel = null;
+        this.errorMessage = 'Hotel not found or unauthorized!';
+        console.error(err);
+      }
+    });
+  }
+
+  // Step 2: Update Hotel
+  updateHotel() {
+    if (!this.hotel) {
+      this.errorMessage = 'No hotel data to update!';
+      return;
+    }
+
+    this.hotelService.updateHotel(this.hotelId, this.hotel).subscribe({
+      next: () => {
+        this.message = 'Hotel updated successfully!';
+        this.errorMessage = '';
+      },
+      error: (err) => {
+        this.message = '';
+        this.errorMessage = 'Failed to update hotel!';
+        console.error(err);
+      }
+    });
+  }
+}
+
+
+---
+
+✅ Step 3: HTML UI
+
+फाइल:
+src/app/features/hotel/update-hotel/update-hotel.html
+
+<div class="container">
+  <h2>Update Hotel</h2>
+
+  <div class="form-group">
+    <input type="number" [(ngModel)]="hotelId" placeholder="Enter Hotel ID" />
+    <button (click)="getHotelById()">Fetch Hotel</button>
+  </div>
+
+  <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+
+  <div *ngIf="hotel">
+    <h3>Edit Hotel Details</h3>
+    <form (ngSubmit)="updateHotel()">
+      <div class="form-group">
+        <label>Hotel Name:</label>
+        <input [(ngModel)]="hotel.name" name="name" required />
+      </div>
+
+      <div class="form-group">
+        <label>Location:</label>
+        <input [(ngModel)]="hotel.location" name="location" required />
+      </div>
+
+      <div class="form-group">
+        <label>Rating:</label>
+        <input type="number" [(ngModel)]="hotel.rating" name="rating" min="1" max="5" />
+      </div>
+
+      <div class="form-group">
+        <label>Available Rooms:</label>
+        <input type="number" [(ngModel)]="hotel.availableRooms" name="availableRooms" />
+      </div>
+
+      <button type="submit">Update Hotel</button>
+    </form>
+  </div>
+
+  <p *ngIf="message" class="success">{{ message }}</p>
+</div>
+
+
+---
+
+✅ Step 4: CSS
+
+फाइल:
+src/app/features/hotel/update-hotel/update-hotel.css
+
+.container {
+  max-width: 600px;
+  margin: 30px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+h2 {
+  text-align: center;
+  color: #333;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.error {
+  color: red;
+  text-align: center;
+}
+
+.success {
+  color: green;
+  text-align: center;
+}
+
+
+---
+
+✅ Step 5: Route जोडा
+
+app.routes.ts मध्ये:
+
+import { UpdateHotelComponent } from './features/hotel/update-hotel/update-hotel';
+
+{ path: 'update-hotel', component: UpdateHotelComponent }
+
+
+---
+
+✅ Step 6: App imports मध्ये component जोडा
+
+app.ts मध्ये:
+
+import { UpdateHotelComponent } from './features/hotel/update-hotel/update-hotel';
+
+imports: [
+  ...,
+  UpdateHotelComponent
+]
+
+
+---
+
+✅ Step 7: Run करा
+
+ng serve
+
+Browser मध्ये जा:
+➡️ http://localhost:4200/update-hotel
+
+
+---
+
+🎯 Output:
+
+1. Hotel ID टाका
+
+
+2. “Fetch Hotel” क्लिक करा → form मध्ये जुनी माहिती दिसेल
+
+
+3. बदल करा
+
+
+4. “Update Hotel” क्लिक करा
+
+
+5. ✅ “Hotel updated successfully!” दिसेल
+
+
+
+
+---
+
+तुला हवं का मी Delete Hotel (Angular side full working) पण लगेच तयार करून देऊ, “Yes” म्हटलं की देतो?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Perfect 🔥 आता “Get Hotel by ID” Angular side वर बनवू step-by-step (backend आधीच तयार आहे /api/hotels/{id}).
 
 
