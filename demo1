@@ -1,3 +1,252 @@
+
+Perfect 🔥 आता “Get Hotel by ID” Angular side वर बनवू step-by-step (backend आधीच तयार आहे /api/hotels/{id}).
+
+
+---
+
+🧩 Goal:
+
+👉 User एक Hotel ID टाकेल → “Search” क्लिक करेल → त्या hotel ची full info table मध्ये दिसेल.
+(HotelService वापरूया — जशी RoomService वापरली होती.)
+
+
+---
+
+✅ Step 1: hotelservice.ts मध्ये method जोडा
+
+(/src/app/core/services/hotelservice.ts)
+
+getHotelById(id: number): Observable<any> {
+  const token = localStorage.getItem('token');
+  const headers = new HttpHeaders({
+    'Authorization': `Bearer ${token}`
+  });
+  return this.http.get<any>(`${this.apiUrl}/${id}`, { headers });
+}
+
+
+---
+
+✅ Step 2: Component बनवा
+
+फोल्डर:
+src/app/features/hotel/get-hotel-by-id/hotel.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HotelService } from '../../../core/services/hotelservice';
+
+@Component({
+  selector: 'app-get-hotel-by-id',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './hotel.html',
+  styleUrls: ['./hotel.css']
+})
+export class GetHotelByIdComponent {
+  hotelId!: number;
+  hotel: any = null;
+  errorMessage = '';
+
+  constructor(private hotelService: HotelService) {}
+
+  getHotel() {
+    if (!this.hotelId) {
+      this.errorMessage = 'Please enter a hotel ID!';
+      return;
+    }
+    this.hotelService.getHotelById(this.hotelId).subscribe({
+      next: (data) => {
+        this.hotel = data;
+        this.errorMessage = '';
+      },
+      error: (err) => {
+        this.hotel = null;
+        this.errorMessage = 'Hotel not found or unauthorized!';
+        console.error(err);
+      }
+    });
+  }
+}
+
+
+---
+
+✅ Step 3: HTML UI
+
+फाइल:
+src/app/features/hotel/get-hotel-by-id/hotel.html
+
+<div class="container">
+  <h2>Search Hotel by ID</h2>
+
+  <div class="form-group">
+    <input
+      type="number"
+      [(ngModel)]="hotelId"
+      placeholder="Enter Hotel ID"
+    />
+    <button (click)="getHotel()">Get Hotel</button>
+  </div>
+
+  <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+
+  <div *ngIf="hotel">
+    <h3>Hotel Details</h3>
+    <table>
+      <tr><th>ID</th><td>{{ hotel.hotelId }}</td></tr>
+      <tr><th>Name</th><td>{{ hotel.name }}</td></tr>
+      <tr><th>Location</th><td>{{ hotel.location }}</td></tr>
+      <tr><th>Rating</th><td>{{ hotel.rating }}</td></tr>
+      <tr><th>Available Rooms</th><td>{{ hotel.availableRooms }}</td></tr>
+    </table>
+  </div>
+</div>
+
+
+---
+
+✅ Step 4: CSS
+
+फाइल:
+src/app/features/hotel/get-hotel-by-id/hotel.css
+
+.container {
+  max-width: 600px;
+  margin: 30px auto;
+  padding: 20px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+h2 {
+  text-align: center;
+  color: #333;
+}
+
+.form-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+.error {
+  color: red;
+  text-align: center;
+  font-weight: 500;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  text-align: left;
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+
+---
+
+✅ Step 5: Route जोडा
+
+app.routes.ts मध्ये 👇
+
+import { GetHotelByIdComponent } from './features/hotel/get-hotel-by-id/hotel';
+
+{ path: 'get-hotel-by-id', component: GetHotelByIdComponent }
+
+
+---
+
+✅ Step 6: App मध्ये Import करा
+
+app.ts मध्ये component import list मध्ये जोडा 👇
+
+import { GetHotelByIdComponent } from './features/hotel/get-hotel-by-id/hotel';
+
+...
+imports: [
+  ...,
+  GetHotelByIdComponent
+]
+
+
+---
+
+✅ Step 7: Browser मध्ये Run करा
+
+ng serve
+
+Browser मध्ये जा 👇
+➡️ http://localhost:4200/get-hotel-by-id
+Hotel ID टाका (उदा. 2) आणि Get Hotel क्लिक करा.
+
+
+---
+
+तयार ✅
+Hotel ची info दिसेल neatly table मध्ये.
+
+
+---
+
+पुढचं step हवं का “Update Hotel” complete working Angular side (form + API call + UI feedback)?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <div class="container">
   <h2>Get Rooms by Hotel ID</h2>
 
