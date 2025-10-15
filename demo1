@@ -1,3 +1,126 @@
+
+
+
+✅ Perfect bro!
+तुझं routes आणि app.ts setup आता जवळपास बरोबर आहे 👌
+पण Cannot match any routes error अजून आला तर खालील 2 छोट्या चुका fix कर — ह्या मुळेच route load होत नाहीये.
+
+
+---
+
+🧩 Step-by-Step Final Fix
+
+✅ 1️⃣ Error reason:
+
+तुझ्या route file मध्ये दोन redirects आहेत 👇
+
+{ path: '', redirectTo: 'login', pathMatch: 'full' },
+{ path: '', redirectTo: '/create-hotel', pathMatch: 'full' },
+
+➡️ Angular मध्ये फक्त एकच default redirect ठेवायचा असतो.
+बाकीचा काढला नाही तर routing conflict होतो ❌
+
+✅ Corrected version:
+
+import { Routes } from '@angular/router';
+import { CreateHotel } from './features/hotel/create-hotel/hotel';
+import GetAllHotels from './features/hotel/get-all-hotels/hotelList';
+import { UpdateHotelComponent } from './features/hotel/update-hotel/hotel';
+import { DeleteHotelComponent } from './features/hotel/delete-hotel/hotel';
+import { SearchHotelComponent } from './features/hotel/search-hotel/hotel';
+import { FilterHotelComponent } from './features/hotel/filter-hotel/hotel';
+import { Login } from './features/auth/login/login';
+import { Register } from './features/auth/register/register';
+import { WelcomeUser } from './features/user/welcome-user/welcome-user';
+import { RoomComponent } from './features/room/get-all-rooms/room';
+import { CreateRoomComponent } from './features/room/create-room/room';
+import { GetRoomComponent } from './features/room/get-room-by-id/room';
+import { UpdateRoomComponent } from './features/room/update-room/room';
+import { DeleteRoomComponent } from './features/room/delete-room/room';
+import { FilterRoomsComponent } from './features/room/filter-room/room';
+import { GetRoomsByHotelComponent } from './features/room/get-room-by-hotel-id/room';
+import { GetHotelByIdComponent } from './features/hotel/get-hotel-by-id/hotel';
+
+export const routes: Routes = [
+  { path: '', redirectTo: 'login', pathMatch: 'full' }, // ✅ Keep only this redirect
+  { path: 'login', component: Login },
+  { path: 'register', component: Register },
+  { path: 'welcome', component: WelcomeUser },
+  { path: 'create-hotel', component: CreateHotel },
+  { path: 'hotels', component: GetAllHotels },
+  { path: 'update-hotel', component: UpdateHotelComponent },
+  { path: 'delete-hotel', component: DeleteHotelComponent },
+  { path: 'search-hotel', component: SearchHotelComponent },
+  { path: 'filter-hotel', component: FilterHotelComponent },
+  { path: 'get-hotel-by-id', component: GetHotelByIdComponent },
+  { path: 'rooms', component: RoomComponent },
+  { path: 'create-room', component: CreateRoomComponent },
+  { path: 'get-room', component: GetRoomComponent },
+  { path: 'update-room', component: UpdateRoomComponent },
+  { path: 'delete-room', component: DeleteRoomComponent },
+  { path: 'filter-rooms', component: FilterRoomsComponent },
+  { path: 'get-rooms-by-hotel', component: GetRoomsByHotelComponent }
+];
+
+
+---
+
+✅ 2️⃣ Next — Restart Angular server
+
+Route cache साफ करण्यासाठी:
+
+Ctrl + C
+ng serve
+
+
+---
+
+✅ 3️⃣ URL Access Check
+
+Browser मध्ये route verify कर:
+
+Page	URL
+
+🏨 Create Hotel	http://localhost:4200/create-hotel
+🏨 Get All Hotels	http://localhost:4200/hotels
+🏨 Delete Hotel	http://localhost:4200/delete-hotel
+🏨 Get Hotel By ID	http://localhost:4200/get-hotel-by-id
+🏠 Get All Rooms	http://localhost:4200/rooms
+➕ Create Room	http://localhost:4200/create-room
+🧾 Get Room By ID	http://localhost:4200/get-room
+✏️ Update Room	http://localhost:4200/update-room
+❌ Delete Room	http://localhost:4200/delete-room
+🔍 Filter Rooms	http://localhost:4200/filter-rooms
+🏨 Get Rooms by Hotel	http://localhost:4200/get-rooms-by-hotel
+
+
+
+---
+
+✅ 4️⃣ Final check
+
+Make sure app.html मध्ये हे आहे 👇
+
+<router-outlet></router-outlet>
+
+
+---
+
+💡 आता route error जाणार, आणि
+http://localhost:4200/delete-hotel उघडल्यावर Delete Hotel page दिसेल 🚀
+
+हवं का मी आता delete-hotel चं HTML + TS + CSS full working code देऊ जे backend /api/hotels/{id} call करेल?
+
+
+
+
+
+
+
+
+
+
+
 import { Routes } from '@angular/router';
 import { CreateHotel } from './features/hotel/create-hotel/hotel';
 import  GetAllHotels  from './features/hotel/get-all-hotels/hotelList';
