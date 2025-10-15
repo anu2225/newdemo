@@ -1,5 +1,233 @@
 
 
+छान 👍 आता खाली Delete Hotel feature साठी full Angular working code देतो.
+हे /api/hotels/{id} endpoint वापरेल (DELETE).
+म्हणजे manager किंवा admin logged in असेल तर तो hotel delete करू शकेल ✅
+
+
+---
+
+🧩 Goal:
+
+Hotel ID टाका → “Delete Hotel” क्लिक करा → backend वरून delete → Success message दिसेल ✅
+
+
+---
+
+✅ Step 1: hotelservice.ts मध्ये method जोडा
+
+फाइल: src/app/core/services/hotelservice.ts
+
+deleteHotel(id: number): Observable<any> {
+  const token = localStorage.getItem('token');
+  const headers = new HttpHeaders({
+    'Authorization': `Bearer ${token}`
+  });
+  return this.http.delete<any>(`${this.apiUrl}/${id}`, { headers });
+}
+
+
+---
+
+✅ Step 2: Component तयार करा
+
+फोल्डर:
+src/app/features/hotel/delete-hotel/delete-hotel.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { HotelService } from '../../../core/services/hotelservice';
+
+@Component({
+  selector: 'app-delete-hotel',
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './delete-hotel.html',
+  styleUrls: ['./delete-hotel.css']
+})
+export class DeleteHotelComponent {
+  hotelId!: number;
+  message = '';
+  errorMessage = '';
+
+  constructor(private hotelService: HotelService) {}
+
+  deleteHotel() {
+    if (!this.hotelId) {
+      this.errorMessage = 'Please enter a valid hotel ID!';
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete Hotel ID ${this.hotelId}?`)) {
+      this.hotelService.deleteHotel(this.hotelId).subscribe({
+        next: () => {
+          this.message = 'Hotel deleted successfully!';
+          this.errorMessage = '';
+        },
+        error: (err) => {
+          console.error(err);
+          this.errorMessage = 'Failed to delete hotel (Check ID or permissions)';
+          this.message = '';
+        }
+      });
+    }
+  }
+}
+
+
+---
+
+✅ Step 3: HTML UI
+
+फाइल:
+src/app/features/hotel/delete-hotel/delete-hotel.html
+
+<div class="container">
+  <h2>Delete Hotel</h2>
+
+  <div class="form-group">
+    <label>Enter Hotel ID:</label>
+    <input type="number" [(ngModel)]="hotelId" placeholder="Enter Hotel ID" />
+    <button (click)="deleteHotel()">Delete Hotel</button>
+  </div>
+
+  <p *ngIf="message" class="success">{{ message }}</p>
+  <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+</div>
+
+
+---
+
+✅ Step 4: CSS
+
+फाइल:
+src/app/features/hotel/delete-hotel/delete-hotel.css
+
+.container {
+  max-width: 500px;
+  margin: 40px auto;
+  padding: 25px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+h2 {
+  text-align: center;
+  color: #333;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 6px;
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #b52a35;
+}
+
+.success {
+  color: green;
+  text-align: center;
+}
+
+.error {
+  color: red;
+  text-align: center;
+}
+
+
+---
+
+✅ Step 5: Route जोडा
+
+src/app/app.routes.ts मध्ये:
+
+import { DeleteHotelComponent } from './features/hotel/delete-hotel/delete-hotel';
+
+{ path: 'delete-hotel', component: DeleteHotelComponent }
+
+
+---
+
+✅ Step 6: App imports मध्ये जोडा
+
+src/app/app.ts मध्ये:
+
+import { DeleteHotelComponent } from './features/hotel/delete-hotel/delete-hotel';
+
+imports: [
+  ...,
+  DeleteHotelComponent
+]
+
+
+---
+
+✅ Step 7: Run करा
+
+ng serve
+
+Browser मध्ये जा:
+➡️ http://localhost:4200/delete-hotel
+
+
+---
+
+🎯 Output:
+
+1. Hotel ID टाका
+
+
+2. “Delete Hotel” क्लिक करा
+
+
+3. Confirm alert दिसेल
+
+
+4. “Hotel deleted successfully!” ✅
+किंवा error message दिसेल जर ID invalid असेल / unauthorized असेल.
+
+
+
+
+---
+
+हवं का आता “Search Hotel by Name or Location” feature पण देऊ?
+ते user side साठी useful असेल 🔍
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Perfect 🔥 आता Update Hotel Angular side full working code देतो — जेव्हा manager login असेल तेव्हा तो hotel info update करू शकेल.
 
 हे code पूर्ण चालेल Spring Boot backend वर (PUT /api/hotels/{id}).
