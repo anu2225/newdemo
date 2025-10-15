@@ -1,3 +1,230 @@
+
+
+
+
+
+
+
+Perfect 🔥 आता मी तुला Get Rooms by Hotel ID साठी Angular चं full working code देतो — म्हणजे काही error येणार नाही.
+
+हा complete setup आहे (4 files):
+✅ room.service.ts
+✅ get-rooms-by-hotel.component.ts
+✅ get-rooms-by-hotel.component.html
+✅ get-rooms-by-hotel.component.css
+
+
+---
+
+🧩 1. room.service.ts
+
+(backend API call साठी)
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class RoomService {
+  private apiUrl = 'http://localhost:8080/api/rooms';
+
+  constructor(private http: HttpClient) {}
+
+  getRoomsByHotelId(hotelId: number): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/hotel/${hotelId}`);
+  }
+}
+
+
+---
+
+🧩 2. get-rooms-by-hotel.component.ts
+
+(Logic + Button click handling)
+
+import { Component } from '@angular/core';
+import { RoomService } from '../room.service';
+
+@Component({
+  selector: 'app-get-rooms-by-hotel',
+  templateUrl: './get-rooms-by-hotel.component.html',
+  styleUrls: ['./get-rooms-by-hotel.component.css']
+})
+export class GetRoomsByHotelComponent {
+  hotelId!: number;
+  rooms: any[] = [];
+  errorMessage = '';
+
+  constructor(private roomService: RoomService) {}
+
+  getRooms() {
+    if (!this.hotelId) {
+      this.errorMessage = 'Please enter hotel ID!';
+      this.rooms = [];
+      return;
+    }
+
+    this.roomService.getRoomsByHotelId(this.hotelId).subscribe({
+      next: (data) => {
+        this.rooms = data;
+        this.errorMessage = '';
+      },
+      error: (err) => {
+        console.error(err);
+        this.errorMessage = 'Error fetching rooms for this hotel!';
+      }
+    });
+  }
+}
+
+
+---
+
+🧩 3. get-rooms-by-hotel.component.html
+
+(UI design + Table display)
+
+<div class="container">
+  <h2>Get Rooms by Hotel ID</h2>
+
+  <div class="form-group">
+    <label>Enter Hotel ID:</label>
+    <input type="number" [(ngModel)]="hotelId" placeholder="Enter hotel ID" />
+    <button (click)="getRooms()">Get Rooms</button>
+  </div>
+
+  <p *ngIf="errorMessage" class="error">{{ errorMessage }}</p>
+
+  <div *ngIf="rooms.length > 0">
+    <h3>Rooms in Hotel {{ hotelId }}</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Room ID</th>
+          <th>Room Number</th>
+          <th>Type</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let room of rooms">
+          <td>{{ room.id }}</td>
+          <td>{{ room.roomNumber }}</td>
+          <td>{{ room.type }}</td>
+          <td>{{ room.price }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+---
+
+🧩 4. get-rooms-by-hotel.component.css
+
+(Simple styling)
+
+.container {
+  max-width: 600px;
+  margin: 20px auto;
+  text-align: center;
+  font-family: Arial, sans-serif;
+}
+
+input {
+  margin: 5px;
+  padding: 8px;
+  width: 200px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 8px 15px;
+  background-color: #1976d2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #125aa1;
+}
+
+table {
+  margin-top: 20px;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 10px;
+  border: 1px solid #ccc;
+}
+
+th {
+  background-color: #f5f5f5;
+}
+
+.error {
+  color: red;
+  font-weight: bold;
+  margin-top: 10px;
+}
+
+
+---
+
+🧠 Extra Step (Angular module मध्ये)
+
+app.module.ts मध्ये FormsModule import केल्याशिवाय ngModel error येतो.
+
+import { FormsModule } from '@angular/forms';
+
+@NgModule({
+  declarations: [
+    GetRoomsByHotelComponent
+  ],
+  imports: [
+    BrowserModule,
+    FormsModule
+  ]
+})
+export class AppModule { }
+
+
+---
+
+✅ Now run command:
+
+ng serve
+
+👉 Browser मध्ये जा:
+
+http://localhost:4200/get-rooms-by-hotel
+
+Hotel ID टाका → “Get Rooms” click करा → त्या hotel चे सगळे rooms दिसतील 🎯
+
+
+---
+
+पुढचं API — “Get Available Rooms” हवं का आता देऊ?
+
+
+
+
+
+
+
+
+
+
+
+
 ठी
 
 ठीक आहे! 🚀 मग मी तुला तयार करून देतो Angular side safe filter component जे min/max price नुसार rooms filter करेल आणि backend 500 error येणार नाही.
