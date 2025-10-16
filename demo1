@@ -1,4 +1,343 @@
 PS C:\Users\2440835\OneDrive - Cognizant\Documents\Project\ISG25JFA003_SmartHotelBookingSystem> cd .\frontend\
+
+
+
+
+Perfect! तू ज्या structure मध्ये सांगितलंय, त्या प्रमाणे मी तुला payment module ready-to-use standalone components setup देतो. प्रत्येक feature वेगळ्या folder + HTML, TS, CSS फाइल्समध्ये असेल, जसं तू हवंय.
+
+
+---
+
+1️⃣ Folder Structure
+
+features/payment/
+├── create-payment/
+│   ├── payment.ts
+│   ├── payment.html
+│   └── payment.css
+├── get-all-payments/
+│   ├── payment.ts
+│   ├── payment.html
+│   └── payment.css
+├── get-payment-by-id/
+│   ├── payment.ts
+│   ├── payment.html
+│   └── payment.css
+├── get-payment-by-booking/
+│   ├── payment.ts
+│   ├── payment.html
+│   └── payment.css
+
+> लक्षात ठेव: सगळ्या TS फाइल्स standalone components आहेत.
+
+
+
+
+---
+
+2️⃣ Create Payment
+
+create-payment/payment.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-create-payment',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
+  templateUrl: './payment.html',
+  styleUrls: ['./payment.css']
+})
+export class CreatePayment {
+  paymentForm: FormGroup;
+
+  constructor(private fb: FormBuilder, private http: HttpClient, private router: Router) {
+    this.paymentForm = this.fb.group({
+      bookingId: ['', Validators.required],
+      paymentMethod: ['', Validators.required]
+    });
+  }
+
+  submitPayment() {
+    if (this.paymentForm.valid) {
+      this.http.post('http://localhost:8080/api/payments/process', this.paymentForm.value)
+        .subscribe({
+          next: () => {
+            alert('Payment Success!');
+            this.router.navigate(['/get-all-payments']);
+          },
+          error: () => alert('Payment Failed!')
+        });
+    }
+  }
+}
+
+create-payment/payment.html
+
+<h2>Create Payment</h2>
+<form [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
+  <label>Booking ID:</label>
+  <input type="number" formControlName="bookingId" />
+  <label>Payment Method:</label>
+  <input type="text" formControlName="paymentMethod" />
+  <button type="submit">Pay Now</button>
+</form>
+
+create-payment/payment.css
+
+form {
+  display: flex;
+  flex-direction: column;
+  max-width: 400px;
+  margin: auto;
+}
+input, button {
+  margin: 10px 0;
+  padding: 8px;
+}
+
+
+---
+
+3️⃣ Get All Payments
+
+get-all-payments/payment.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-get-all-payments',
+  standalone: true,
+  imports: [CommonModule, HttpClientModule],
+  templateUrl: './payment.html',
+  styleUrls: ['./payment.css']
+})
+export class GetAllPayments {
+  payments: any[] = [];
+
+  constructor(private http: HttpClient) {
+    this.http.get<any[]>('http://localhost:8080/api/payments/get-payments')
+      .subscribe({
+        next: res => this.payments = res,
+        error: err => alert('Failed to load payments')
+      });
+  }
+}
+
+get-all-payments/payment.html
+
+<h2>All Payments</h2>
+<table border="1" width="80%" style="margin:auto;">
+  <tr>
+    <th>Payment ID</th>
+    <th>Booking ID</th>
+    <th>Amount</th>
+    <th>Method</th>
+    <th>Status</th>
+  </tr>
+  <tr *ngFor="let p of payments">
+    <td>{{p.paymentId}}</td>
+    <td>{{p.bookingId}}</td>
+    <td>{{p.amount}}</td>
+    <td>{{p.paymentMethod}}</td>
+    <td>{{p.paymentStatus}}</td>
+  </tr>
+</table>
+
+get-all-payments/payment.css
+
+table {
+  border-collapse: collapse;
+}
+th, td {
+  padding: 10px;
+  text-align: center;
+}
+
+
+---
+
+4️⃣ Get Payment By ID
+
+get-payment-by-id/payment.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-get-payment-by-id',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
+  templateUrl: './payment.html',
+  styleUrls: ['./payment.css']
+})
+export class GetPaymentById {
+  form: FormGroup;
+  payment: any = null;
+
+  constructor(private fb: FormBuilder, private http: HttpClient) {
+    this.form = this.fb.group({
+      paymentId: ['', Validators.required]
+    });
+  }
+
+  fetchPayment() {
+    if (this.form.valid) {
+      this.http.get(`http://localhost:8080/api/payments/${this.form.value.paymentId}`)
+        .subscribe({
+          next: res => this.payment = res,
+          error: err => alert('Payment not found')
+        });
+    }
+  }
+}
+
+get-payment-by-id/payment.html
+
+<h2>Get Payment By ID</h2>
+<form [formGroup]="form" (ngSubmit)="fetchPayment()">
+  <label>Payment ID:</label>
+  <input type="number" formControlName="paymentId" />
+  <button type="submit">Fetch</button>
+</form>
+
+<div *ngIf="payment">
+  <p>Payment ID: {{payment.paymentId}}</p>
+  <p>Booking ID: {{payment.bookingId}}</p>
+  <p>Amount: {{payment.amount}}</p>
+  <p>Method: {{payment.paymentMethod}}</p>
+  <p>Status: {{payment.paymentStatus}}</p>
+</div>
+
+get-payment-by-id/payment.css
+
+form, div {
+  max-width: 400px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+}
+input, button {
+  margin: 10px 0;
+  padding: 8px;
+}
+
+
+---
+
+5️⃣ Get Payment By Booking ID
+
+get-payment-by-booking/payment.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-get-payment-by-booking',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
+  templateUrl: './payment.html',
+  styleUrls: ['./payment.css']
+})
+export class GetPaymentByBooking {
+  form: FormGroup;
+  payment: any = null;
+
+  constructor(private fb: FormBuilder, private http: HttpClient) {
+    this.form = this.fb.group({
+      bookingId: ['', Validators.required]
+    });
+  }
+
+  fetchPayment() {
+    if (this.form.valid) {
+      this.http.get(`http://localhost:8080/api/payments/booking/${this.form.value.bookingId}`)
+        .subscribe({
+          next: res => this.payment = res,
+          error: err => alert('Payment not found for booking')
+        });
+    }
+  }
+}
+
+get-payment-by-booking/payment.html
+
+<h2>Get Payment By Booking ID</h2>
+<form [formGroup]="form" (ngSubmit)="fetchPayment()">
+  <label>Booking ID:</label>
+  <input type="number" formControlName="bookingId" />
+  <button type="submit">Fetch</button>
+</form>
+
+<div *ngIf="payment">
+  <p>Payment ID: {{payment.paymentId}}</p>
+  <p>Booking ID: {{payment.bookingId}}</p>
+  <p>Amount: {{payment.amount}}</p>
+  <p>Method: {{payment.paymentMethod}}</p>
+  <p>Status: {{payment.paymentStatus}}</p>
+</div>
+
+get-payment-by-booking/payment.css
+
+form, div {
+  max-width: 400px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+}
+input, button {
+  margin: 10px 0;
+  padding: 8px;
+}
+
+
+---
+
+✅ आता प्रत्येक feature independent page वर चालेल, navigation /create-payment, /get-all-payments, /get-payment-by-id, /get-payment-by-booking वर.
+
+
+---
+
+जर हवे असेल तर मी App.ts आणि Routes.ts पूर्ण setup ready-to-use तयार करून देऊ, जे copy-paste केलं की लगेच चालेल, navigation + standalone components सह.
+
+तुला ते बनवून द्यावे का?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 PS C:\Users\2440835\OneDrive - Cognizant\Documents\Project\ISG25JFA003_SmartHotelBookingSystem\frontend> cd .\SmartHotelBookingSystem\
 PS C:\Users\2440835\OneDrive - Cognizant\Documents\Project\ISG25JFA003_SmartHotelBookingSystem\frontend\SmartHotelBookingSystem> npm start
 
