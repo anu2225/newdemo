@@ -1,185 +1,130 @@
-Perfect 👌 समजलं — म्हणजे तूचा folder structure असा आहे:
-
-features/payment/
-  ├── create-payment/
-  ├── get-all-payments/
-  ├── get-payment-by-booking-id/
-  ├── get-payment-by-id/
-
-आपण सुरू करूया 🔹 Step 1 → create-payment (जे backend मधल्या /process API शी जोडलेलं आहे).
-
-
----
-
-🟢 Step 1 — create-payment
-
-📁 File 1: src/app/features/payment/create-payment/payment.ts
-
-import { Component } from '@angular/core';
-import { PaymentService } from '../../../services/payment.service';
-import { FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
-
-@Component({
-  selector: 'app-create-payment',
-  standalone: true,
-  imports: [FormsModule, CommonModule],
-  templateUrl: './payment.html',
-  styleUrls: ['./payment.css']
-})
-export class CreatePayment {
-  bookingId!: number;
-  paymentMethod: string = '';
-  message: string = '';
-
-  constructor(private paymentService: PaymentService) {}
-
-  processPayment() {
-    const data = {
-      bookingId: this.bookingId,
-      paymentMethod: this.paymentMethod
-    };
-
-    this.paymentService.processPayment(data).subscribe({
-      next: (res) => {
-        this.message = `✅ Payment Successful! Status: ${res.paymentStatus}`;
-      },
-      error: (err) => {
-        this.message = `❌ Payment Failed: ${err.error?.message || 'Try again'}`;
-      }
-    });
-  }
-}
-
-
----
-
-📁 File 2: src/app/features/payment/create-payment/payment.html
-
-<div class="payment-container">
-  <h2>💳 Process Payment</h2>
-
-  <label>Booking ID:</label>
-  <input type="number" [(ngModel)]="bookingId" placeholder="Enter Booking ID" />
-
-  <label>Payment Method:</label>
-  <input type="text" [(ngModel)]="paymentMethod" placeholder="e.g. CARD / UPI" />
-
-  <button (click)="processPayment()">Pay Now</button>
-
-  <p class="message">{{ message }}</p>
-</div>
-
-
----
-
-📁 File 3: src/app/features/payment/create-payment/payment.css
-
-.payment-container {
-  width: 400px;
-  margin: 50px auto;
-  background: #f8f9fa;
-  padding: 25px;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-label {
-  font-weight: bold;
-  display: block;
-  margin-top: 10px;
-}
-
-input {
-  width: 100%;
-  padding: 8px;
-  margin-top: 5px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-button {
-  width: 100%;
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 10px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #0056b3;
-}
-
-.message {
-  margin-top: 15px;
-  font-weight: bold;
-  text-align: center;
-}
-
-
----
-
-📁 File 4: src/app/services/payment.service.ts
-
-(जर तूझ्याकडे आधीच नसेल तर हे एकदाच तयार कर.)
-
-import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
-
-@Injectable({
-  providedIn: 'root'
-})
-export class PaymentService {
-  private baseUrl = 'http://localhost:8080/api/payments';
-
-  constructor(private http: HttpClient) {}
-
-  processPayment(paymentData: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/process`, paymentData);
-  }
-
-  getAllPayments(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/get-payments`);
-  }
-
-  getPaymentById(paymentId: number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/${paymentId}`);
-  }
-
-  getPaymentByBookingId(bookingId: number): Observable<any> {
-    return this.http.get(`${this.baseUrl}/booking/${bookingId}`);
-  }
-}
-
-
----
-
-📁 Step 5: Route Add कर app.routes.ts मध्ये
-
 import { Routes } from '@angular/router';
+import { CreateHotel } from './features/hotel/create-hotel/hotel';
+import  GetAllHotels  from './features/hotel/get-all-hotels/hotelList';
+import { UpdateHotelComponent } from './features/hotel/update-hotel/hotel';
+import { SearchHotelComponent } from './features/hotel/search-hotel/hotel';
+import { FilterHotelComponent } from './features/hotel/filter-hotel/hotel';
+import { GetHotelByIdComponent } from './features/hotel/get-hotel-by-id/hotel';
+import { Login } from './features/auth/login/login';
+import { Register } from './features/auth/register/register';
+import { WelcomeUser } from './features/user/welcome-user/welcome-user';
+import { RoomComponent } from './features/room/get-all-rooms/room';
+import { CreateRoomComponent } from './features/room/create-room/room';
+import { GetRoomComponent } from './features/room/get-room-by-id/room';
+import { UpdateRoomComponent } from './features/room/update-room/room';
+import { DeleteRoomComponent } from './features/room/delete-room/room';
+import { FilterRoomsComponent } from './features/room/filter-room/room';
+import { GetRoomsByHotelComponent } from './features/room/get-room-by-hotel-id/room';
+import { DeleteHotelComponent } from './features/hotel/delete-hotel/hotel';
+import { GetAllHotelsComponent } from './features/hotel/get-all-hotels/hotel';
+import { Home } from './features/home/home/home';
+import { AuthGuard } from './core/guards/auth.guard';
+import { HomeAdmin } from './features/home/home-admin/home-admin';
+import { HomeManager } from './features/home/home-manager/home-manager';
 import { CreatePayment } from './features/payment/create-payment/payment';
 
+
+
 export const routes: Routes = [
-  { path: 'create-payment', component: CreatePayment }
+    {path: 'home', component: Home, canActivate:[AuthGuard]},
+    {path: 'home-manager', component: HomeManager},
+    {path: 'login', component: Login},
+    {path: 'register', component: Register},
+    {path: 'welcome', component: WelcomeUser},
+    { path: 'create-hotel', component: CreateHotel },
+    { path: 'hotels', component: GetAllHotelsComponent },
+    { path: 'update-hotel', component: UpdateHotelComponent },
+    { path:'search-hotel',component:SearchHotelComponent},
+    {path:'filter-hotel',component:FilterHotelComponent},
+    {path:'rooms',component:RoomComponent},
+    { path: 'create-room', component: CreateRoomComponent},
+    { path: 'get-room', component: GetRoomComponent },
+    { path: 'update-room', component: UpdateRoomComponent },
+    {path:'delete-room',component:DeleteRoomComponent},
+    { path: 'filter-rooms', component: FilterRoomsComponent },
+    { path: 'get-rooms-by-hotel', component: GetRoomsByHotelComponent},
+    { path:'delete-hotel',component:DeleteHotelComponent},
+    {path:'hotel/:id',component:GetHotelByIdComponent},
+    {path: '', redirectTo: 'home', pathMatch: 'full'},
+    { path: 'create-payment', component: CreatePayment }
+
+
+
 ];
+import { Component, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
 
+// Features
+import { Router, RouterModule, RouterOutlet } from '@angular/router';
+import { Login } from './features/auth/login/login';
+import { Register } from './features/auth/register/register';
+import { WelcomeUser } from './features/user/welcome-user/welcome-user';
+import { CreateHotel } from './features/hotel/create-hotel/hotel';
+import { GetAllHotelsComponent } from './features/hotel/get-all-hotels/hotel';
+import { UpdateHotelComponent } from './features/hotel/update-hotel/hotel';
+import { SearchHotelComponent } from './features/hotel/search-hotel/hotel';
+import { FilterHotelComponent } from './features/hotel/filter-hotel/hotel';
+import { DeleteHotelComponent } from './features/hotel/delete-hotel/hotel';
+import { RoomComponent } from './features/room/get-all-rooms/room';
+import { CreateRoomComponent } from './features/room/create-room/room';
+import { GetRoomComponent } from './features/room/get-room-by-id/room';
+import { UpdateRoomComponent } from './features/room/update-room/room';
+import { DeleteRoomComponent } from './features/room/delete-room/room';
+import { FilterRoomsComponent } from './features/room/filter-room/room';
+import { GetHotelByIdComponent } from './features/hotel/get-hotel-by-id/hotel';
 
----
+import { Home } from './features/home/home/home';
+import { Navbar } from './shared/components/navbar/navbar';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatChipsModule } from '@angular/material/chips';
+import { HomeManager } from './features/home/home-manager/home-manager';
+import { CreatePayment } from './features/payment/create-payment/payment';
 
-✅ आता run करून पाहा:
-👉 http://localhost:4200/create-payment
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterOutlet,
+    Navbar,
+    RouterModule,
+    HomeManager,
+    Home,
+    Login,
+    Register,
+    WelcomeUser,
+    CreateHotel,
+    GetAllHotelsComponent,
+    UpdateHotelComponent,
+    SearchHotelComponent,
+    FilterHotelComponent,
+    RoomComponent,
+    CreateRoomComponent,
+    GetRoomComponent,
+    UpdateRoomComponent,
+    DeleteRoomComponent,
+    FilterRoomsComponent,
+    GetHotelByIdComponent,
+    DeleteHotelComponent,
+    GetAllHotelsComponent,
+    CreatePayment,
 
-तू Booking ID आणि Payment Method टाकशील, “Pay Now” क्लिक केल्यावर API call होईल
-(http://localhost:8080/api/payments/process)
-आणि success / fail message दिसेल.
-
-
----
-
-पुढचा step देऊ का?
-🔸 म्हणजे get-all-payments (सर्व payments list table मध्ये दाखवायचा component)?
+  ],
+  templateUrl: './app.html',
+  styleUrls: ['./app.css']
+})
+export class App {
+  protected readonly title = signal('SmartHotelBookingSystem');
+}
 
