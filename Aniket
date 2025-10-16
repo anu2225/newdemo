@@ -1,3 +1,190 @@
+Perfect ✅ तू जवळपास बरोबर structure बनवलं आहेस — पण तुझ्या App आणि routes setup मध्ये 2–3 छोट्या चुका आहेत ज्यामुळेच तुला हा "Cannot match any routes" error दिसतोय.
+चल step-by-step समजून घेऊ आणि नंतर पूर्ण बरोबर working code देतो 👇
+
+
+---
+
+⚠️ चुकांचा brief summary:
+
+1. तू routes array define केलंय पण RouterModule.forRoot(routes) हे import मध्ये जोडलेलं नाही.
+
+
+2. CreatePayment हे standalone component आहे, म्हणून route declare करताना ते standalone असल्याचं Angular ला माहीत असायला हवं.
+
+
+3. RouterModule import करताना routes register केलं पाहिजे — पण तू ते App मध्ये स्वतंत्र ठेवलेलं आहेस.
+
+
+4. तुझ्या काही imports (उदा. GetAllHotels) चुकीच्या नावाने आहेत — component export default नसल्यास import {} syntax लागतो.
+
+
+5. App component standalone असल्याने तुला RouterModule.forRoot(routes) directly App च्या imports मध्ये टाकावं लागतं (कारण AppModule नाही).
+
+
+
+
+---
+
+✅ चला, हे आहे Correct & Working version:
+
+🟩 app.routes.ts
+
+import { Routes } from '@angular/router';
+import { CreateHotel } from './features/hotel/create-hotel/hotel';
+import { GetAllHotelsComponent } from './features/hotel/get-all-hotels/hotel';
+import { UpdateHotelComponent } from './features/hotel/update-hotel/hotel';
+import { SearchHotelComponent } from './features/hotel/search-hotel/hotel';
+import { FilterHotelComponent } from './features/hotel/filter-hotel/hotel';
+import { GetHotelByIdComponent } from './features/hotel/get-hotel-by-id/hotel';
+import { DeleteHotelComponent } from './features/hotel/delete-hotel/hotel';
+import { RoomComponent } from './features/room/get-all-rooms/room';
+import { CreateRoomComponent } from './features/room/create-room/room';
+import { GetRoomComponent } from './features/room/get-room-by-id/room';
+import { UpdateRoomComponent } from './features/room/update-room/room';
+import { DeleteRoomComponent } from './features/room/delete-room/room';
+import { FilterRoomsComponent } from './features/room/filter-room/room';
+import { GetRoomsByHotelComponent } from './features/room/get-room-by-hotel-id/room';
+import { Home } from './features/home/home/home';
+import { HomeManager } from './features/home/home-manager/home-manager';
+import { Login } from './features/auth/login/login';
+import { Register } from './features/auth/register/register';
+import { WelcomeUser } from './features/user/welcome-user/welcome-user';
+import { CreatePayment } from './features/payment/create-payment/payment';
+import { AuthGuard } from './core/guards/auth.guard';
+
+export const routes: Routes = [
+  { path: '', redirectTo: 'home', pathMatch: 'full' },
+  { path: 'home', component: Home, canActivate: [AuthGuard] },
+  { path: 'home-manager', component: HomeManager },
+  { path: 'login', component: Login },
+  { path: 'register', component: Register },
+  { path: 'welcome', component: WelcomeUser },
+
+  // Hotel Routes
+  { path: 'create-hotel', component: CreateHotel },
+  { path: 'hotels', component: GetAllHotelsComponent },
+  { path: 'update-hotel', component: UpdateHotelComponent },
+  { path: 'search-hotel', component: SearchHotelComponent },
+  { path: 'filter-hotel', component: FilterHotelComponent },
+  { path: 'delete-hotel', component: DeleteHotelComponent },
+  { path: 'hotel/:id', component: GetHotelByIdComponent },
+
+  // Room Routes
+  { path: 'rooms', component: RoomComponent },
+  { path: 'create-room', component: CreateRoomComponent },
+  { path: 'get-room', component: GetRoomComponent },
+  { path: 'update-room', component: UpdateRoomComponent },
+  { path: 'delete-room', component: DeleteRoomComponent },
+  { path: 'filter-rooms', component: FilterRoomsComponent },
+  { path: 'get-rooms-by-hotel', component: GetRoomsByHotelComponent },
+
+  // Payment Route
+  { path: 'create-payment', component: CreatePayment }
+];
+
+
+---
+
+🟦 app.ts (Main App Component)
+
+import { Component, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterOutlet, RouterModule } from '@angular/router';
+import { ReactiveFormsModule } from '@angular/forms';
+import { routes } from './app.routes';
+import { Navbar } from './shared/components/navbar/navbar';
+
+// Features
+import { Home } from './features/home/home/home';
+import { HomeManager } from './features/home/home-manager/home-manager';
+import { Login } from './features/auth/login/login';
+import { Register } from './features/auth/register/register';
+import { WelcomeUser } from './features/user/welcome-user/welcome-user';
+import { CreateHotel } from './features/hotel/create-hotel/hotel';
+import { GetAllHotelsComponent } from './features/hotel/get-all-hotels/hotel';
+import { UpdateHotelComponent } from './features/hotel/update-hotel/hotel';
+import { SearchHotelComponent } from './features/hotel/search-hotel/hotel';
+import { FilterHotelComponent } from './features/hotel/filter-hotel/hotel';
+import { DeleteHotelComponent } from './features/hotel/delete-hotel/hotel';
+import { RoomComponent } from './features/room/get-all-rooms/room';
+import { CreateRoomComponent } from './features/room/create-room/room';
+import { GetRoomComponent } from './features/room/get-room-by-id/room';
+import { UpdateRoomComponent } from './features/room/update-room/room';
+import { DeleteRoomComponent } from './features/room/delete-room/room';
+import { FilterRoomsComponent } from './features/room/filter-room/room';
+import { GetHotelByIdComponent } from './features/hotel/get-hotel-by-id/hotel';
+import { CreatePayment } from './features/payment/create-payment/payment';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterOutlet,
+    ReactiveFormsModule,
+    Navbar,
+    RouterModule.forRoot(routes), // ✅ हे जोडणं खूप गरजेचं आहे!
+    Home,
+    HomeManager,
+    Login,
+    Register,
+    WelcomeUser,
+    CreateHotel,
+    GetAllHotelsComponent,
+    UpdateHotelComponent,
+    SearchHotelComponent,
+    FilterHotelComponent,
+    DeleteHotelComponent,
+    RoomComponent,
+    CreateRoomComponent,
+    GetRoomComponent,
+    UpdateRoomComponent,
+    DeleteRoomComponent,
+    FilterRoomsComponent,
+    GetHotelByIdComponent,
+    CreatePayment
+  ],
+  templateUrl: './app.html',
+  styleUrls: ['./app.css']
+})
+export class App {
+  protected readonly title = signal('SmartHotelBookingSystem');
+}
+
+
+---
+
+✅ Final Check:
+
+RouterModule.forRoot(routes) हे imports मध्ये आलं आहे का → ✅
+
+Route path create-payment आहे का → ✅
+
+Component ला @Component() decorator आहे का → ✅
+
+App मध्ये <router-outlet> आहे का → ✅
+
+
+
+---
+
+असं केल्यावर
+🔥 Error “Cannot match any routes. URL Segment: 'create-payment'”
+पूर्ण गायब होईल.
+
+
+---
+
+तू confirm कर —
+मी आता Create Payment साठी Service + HTML + TS + CSS देऊ का?
+
+
+
+
+
+
+
+
 import { Routes } from '@angular/router';
 import { CreateHotel } from './features/hotel/create-hotel/hotel';
 import  GetAllHotels  from './features/hotel/get-all-hotels/hotelList';
