@@ -1,3 +1,106 @@
+tu
+
+
+import { Routes } from '@angular/router';
+import { Landing } from './features/landing/landing';
+import { PatientDashboard } from './features/patient/patient-dashboard/patient-dashboard';
+import { DoctorDashboard } from './features/doctor/doctor-dashboard/doctor-dashboard';
+import { PublicLayout } from './layouts/public-layout/public-layout';
+import { DashboardLayout } from './layouts/dashboard-layout/dashboard-layout';
+import { Login } from './features/auth/login/login';
+import { Register } from './features/auth/register/register';
+import { AuthLayout } from './layouts/auth-layout/auth-layout';
+import { DoctorAppointments } from './features/doctor/doctor-appointments/doctor-appointments';
+import { AdminDashboard } from './features/admin/admin-dashboard/admin-dashboard';
+import { MedicalRecordCreate } from './features/medical-record/create-record/medical-record-create';
+
+export const routes: Routes = [
+  // Public routes
+  {
+    path: '',
+    component: PublicLayout,
+    children: [
+      { path: '', component: Landing },
+    ],
+  },
+
+  // Patient routes
+  {
+    path: 'patient',
+    component: DashboardLayout,
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }, // default redirect
+      { path: 'dashboard', component: PatientDashboard },
+    ],
+  },
+
+  // Doctor routes
+  {
+    path: 'doctor',
+    component: DashboardLayout,
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }, // default redirect
+      { path: 'dashboard', component: DoctorDashboard },
+      { path: 'appointments', component: DoctorAppointments },
+      {
+        path: 'patients',
+        loadComponent: () =>
+          import('./features/doctor/patient-management/patient-management').then(
+            (m) => m.PatientManagement
+          ),
+      },
+    ],
+  },
+
+  // Admin routes
+  {
+    path: 'admin',
+    component: DashboardLayout,
+    children: [
+      { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+      { path: 'dashboard', component: AdminDashboard },
+    ],
+  },
+
+  // Auth routes
+  {
+    path: 'auth',
+    component: AuthLayout,
+    children: [
+      { path: '', redirectTo: 'login', pathMatch: 'full' },
+      { path: 'login', component: Login },
+      { path: 'register', component: Register },
+    ],
+  },
+
+  // Medical Record Create route
+  {
+    path: 'medical-record/create',
+    component: MedicalRecordCreate,
+  },
+
+  // Wildcard route for 404 page (optional)
+  {
+    path: '**',
+    redirectTo: '',
+    pathMatch: 'full',
+  },
+];
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Ahh got it! 😎 Right now you want just the “Create Medical Record” feature fully working in Angular—TS, HTML, CSS, routing, model, service—nothing else for now. Let’s do it cleanly.
 
 
