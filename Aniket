@@ -1,3 +1,252 @@
+
+Perfect! आपण आता पूर्ण payment module + standalone App + routes + main.ts setup करू, जे NG04002 error नाही देणार. मी तुला ready-to-run Angular 17+ standalone setup देतो.
+
+
+---
+
+1️⃣ app.routes.ts
+
+import { Routes } from '@angular/router';
+import { Home } from './features/home/home/home';
+import { HomeManager } from './features/home/home-manager/home-manager';
+import { Login } from './features/auth/login/login';
+import { Register } from './features/auth/register/register';
+import { WelcomeUser } from './features/user/welcome-user/welcome-user';
+import { CreateHotel } from './features/hotel/create-hotel/hotel';
+import { GetAllHotelsComponent } from './features/hotel/get-all-hotels/hotel';
+import { UpdateHotelComponent } from './features/hotel/update-hotel/hotel';
+import { SearchHotelComponent } from './features/hotel/search-hotel/hotel';
+import { FilterHotelComponent } from './features/hotel/filter-hotel/hotel';
+import { DeleteHotelComponent } from './features/hotel/delete-hotel/hotel';
+import { GetHotelByIdComponent } from './features/hotel/get-hotel-by-id/hotel';
+import { RoomComponent } from './features/room/get-all-rooms/room';
+import { CreateRoomComponent } from './features/room/create-room/room';
+import { GetRoomComponent } from './features/room/get-room-by-id/room';
+import { UpdateRoomComponent } from './features/room/update-room/room';
+import { DeleteRoomComponent } from './features/room/delete-room/room';
+import { FilterRoomsComponent } from './features/room/filter-room/room';
+import { GetRoomsByHotelComponent } from './features/room/get-room-by-hotel-id/room';
+import { CreatePayment } from './features/payment/create-payment/payment';
+
+export const routes: Routes = [
+  { path: '', redirectTo: 'home', pathMatch: 'full' },
+  { path: 'home', component: Home },
+  { path: 'home-manager', component: HomeManager },
+  { path: 'login', component: Login },
+  { path: 'register', component: Register },
+  { path: 'welcome', component: WelcomeUser },
+
+  // Hotel
+  { path: 'create-hotel', component: CreateHotel },
+  { path: 'hotels', component: GetAllHotelsComponent },
+  { path: 'update-hotel', component: UpdateHotelComponent },
+  { path: 'search-hotel', component: SearchHotelComponent },
+  { path: 'filter-hotel', component: FilterHotelComponent },
+  { path: 'delete-hotel', component: DeleteHotelComponent },
+  { path: 'hotel/:id', component: GetHotelByIdComponent },
+
+  // Room
+  { path: 'rooms', component: RoomComponent },
+  { path: 'create-room', component: CreateRoomComponent },
+  { path: 'get-room', component: GetRoomComponent },
+  { path: 'update-room', component: UpdateRoomComponent },
+  { path: 'delete-room', component: DeleteRoomComponent },
+  { path: 'filter-rooms', component: FilterRoomsComponent },
+  { path: 'get-rooms-by-hotel', component: GetRoomsByHotelComponent },
+
+  // Payment
+  { path: 'create-payment', component: CreatePayment },
+];
+
+
+---
+
+2️⃣ app.ts (Standalone root component)
+
+import { Component, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule } from '@angular/forms';
+import { RouterOutlet } from '@angular/router';
+
+// Features
+import { Navbar } from './shared/components/navbar/navbar';
+import { Home } from './features/home/home/home';
+import { HomeManager } from './features/home/home-manager/home-manager';
+import { Login } from './features/auth/login/login';
+import { Register } from './features/auth/register/register';
+import { WelcomeUser } from './features/user/welcome-user/welcome-user';
+import { CreateHotel } from './features/hotel/create-hotel/hotel';
+import { GetAllHotelsComponent } from './features/hotel/get-all-hotels/hotel';
+import { UpdateHotelComponent } from './features/hotel/update-hotel/hotel';
+import { SearchHotelComponent } from './features/hotel/search-hotel/hotel';
+import { FilterHotelComponent } from './features/hotel/filter-hotel/hotel';
+import { DeleteHotelComponent } from './features/hotel/delete-hotel/hotel';
+import { GetHotelByIdComponent } from './features/hotel/get-hotel-by-id/hotel';
+import { RoomComponent } from './features/room/get-all-rooms/room';
+import { CreateRoomComponent } from './features/room/create-room/room';
+import { GetRoomComponent } from './features/room/get-room-by-id/room';
+import { UpdateRoomComponent } from './features/room/update-room/room';
+import { DeleteRoomComponent } from './features/room/delete-room/room';
+import { FilterRoomsComponent } from './features/room/filter-room/room';
+import { GetRoomsByHotelComponent } from './features/room/get-room-by-hotel-id/room';
+import { CreatePayment } from './features/payment/create-payment/payment';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    RouterOutlet,
+    Navbar,
+
+    Home,
+    HomeManager,
+    Login,
+    Register,
+    WelcomeUser,
+    CreateHotel,
+    GetAllHotelsComponent,
+    UpdateHotelComponent,
+    SearchHotelComponent,
+    FilterHotelComponent,
+    DeleteHotelComponent,
+    GetHotelByIdComponent,
+    RoomComponent,
+    CreateRoomComponent,
+    GetRoomComponent,
+    UpdateRoomComponent,
+    DeleteRoomComponent,
+    FilterRoomsComponent,
+    GetRoomsByHotelComponent,
+    CreatePayment,
+  ],
+  templateUrl: './app.html',
+  styleUrls: ['./app.css'],
+})
+export class App {
+  protected readonly title = signal('SmartHotelBookingSystem');
+}
+
+> लक्षात ठेव: RouterModule.forRoot(routes) App imports मध्ये कधीही नाही वापरायचा, standalone App मध्ये provideRouter(routes) main.ts मध्ये द्यायचा.
+
+
+
+
+---
+
+3️⃣ main.ts
+
+import { bootstrapApplication } from '@angular/platform-browser';
+import { App } from './app/app';
+import { provideRouter } from '@angular/router';
+import { routes } from './app/app.routes';
+import { importProvidersFrom } from '@angular/core';
+import { HttpClientModule } from '@angular/common/http';
+
+bootstrapApplication(App, {
+  providers: [
+    importProvidersFrom(HttpClientModule),
+    provideRouter(routes),
+  ],
+}).catch(err => console.error(err));
+
+
+---
+
+4️⃣ Create Payment component (example)
+
+create-payment.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-create-payment',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
+  templateUrl: './create-payment.html',
+  styleUrls: ['./create-payment.css']
+})
+export class CreatePayment {
+  paymentForm: FormGroup;
+
+  constructor(private fb: FormBuilder, private http: HttpClient) {
+    this.paymentForm = this.fb.group({
+      bookingId: ['', Validators.required],
+      paymentMethod: ['', Validators.required],
+    });
+  }
+
+  submitPayment() {
+    if (this.paymentForm.valid) {
+      this.http.post('http://localhost:8080/api/payments/process', this.paymentForm.value)
+        .subscribe({
+          next: res => alert('Payment successful!'),
+          error: err => alert('Payment failed!')
+        });
+    }
+  }
+}
+
+create-payment.html
+
+<div class="container">
+  <h2>Process Payment</h2>
+  <form [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
+    <label>Booking ID:</label>
+    <input formControlName="bookingId" type="number" />
+
+    <label>Payment Method:</label>
+    <input formControlName="paymentMethod" type="text" />
+
+    <button type="submit">Pay</button>
+  </form>
+</div>
+
+create-payment.css
+
+.container { max-width: 500px; margin: auto; }
+label { display: block; margin-top: 10px; }
+input { width: 100%; padding: 5px; margin-top: 5px; }
+button { margin-top: 15px; padding: 10px 20px; }
+
+
+---
+
+✅ हे setup फॉलो केल्यावर:
+
+1. /create-payment route काम करेल.
+
+
+2. NG04002 error नको येणार.
+
+
+3. Standalone Angular + Routing + Payment module perfectly connected.
+
+
+
+
+---
+
+तुला हवं असल्यास मी get-all-payments, get-payment-by-id, get-payment-by-booking साठीही ready-to-run components देऊ शकतो, अगदी HTML + TS + CSS सहित.
+
+तुम्ही हवं आहे का?
+
+
+
+
+
+
+
+
+
+
+
+
+
 बरोबर, मी तुला तुझ्या current setup मध्ये जे errors येत आहेत ते fix करून, Angular standalone app + payment module सह पूर्ण working code structure देतो.
 
 तुझ्या code मध्ये मुख्य errors हे:
