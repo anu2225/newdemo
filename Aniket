@@ -1,287 +1,185 @@
-package com.cognizant.smarthotelbooking.controller;
+Perfect 👌 समजलं — म्हणजे तूचा folder structure असा आहे:
 
-import com.cognizant.smarthotelbooking.dto.requestdto.PaymentRequestDTO;
-import com.cognizant.smarthotelbooking.dto.responsedto.PaymentResponseDTO;
-import com.cognizant.smarthotelbooking.entity.Payment;
-import com.cognizant.smarthotelbooking.service.PaymentService;
-import jakarta.validation.Valid;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+features/payment/
+  ├── create-payment/
+  ├── get-all-payments/
+  ├── get-payment-by-booking-id/
+  ├── get-payment-by-id/
 
-import java.util.List;
+आपण सुरू करूया 🔹 Step 1 → create-payment (जे backend मधल्या /process API शी जोडलेलं आहे).
 
-@CrossOrigin("http://localhost:4200")
-@RestController
-@RequestMapping("/api/payments")
-@Slf4j
-public class PaymentController {
 
-    private final PaymentService paymentService;
+---
 
-    public PaymentController(PaymentService paymentService) {
-        this.paymentService = paymentService;
-    }
+🟢 Step 1 — create-payment
 
-    @PreAuthorize("hasRole('USER')")
-    @PostMapping("/process")
-    public ResponseEntity<PaymentResponseDTO> processPayment(@Valid @RequestBody PaymentRequestDTO paymentRequest) {
-        log.info("Processing payment for booking ID: {}", paymentRequest.getBookingId());
-          PaymentResponseDTO payment = paymentService.processPayment(paymentRequest);
-            return ResponseEntity.ok(payment);
-    }
+📁 File 1: src/app/features/payment/create-payment/payment.ts
 
-    @PreAuthorize("hasRole('ADMIN')")
-    @GetMapping("/get-payments")
-    public ResponseEntity<List<Payment>> getAllPayments() {
-        return ResponseEntity.ok(paymentService.getAllPayments());
-    }
+import { Component } from '@angular/core';
+import { PaymentService } from '../../../services/payment.service';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
 
-    @PreAuthorize("hasAnyRole('USER','ADMIN','MANAGER')")
-    @GetMapping("/{paymentId}")
-    public ResponseEntity<PaymentResponseDTO> getPayment(@PathVariable String paymentId) {
-        log.info("Fetching payment with ID: {}", paymentId);
-        PaymentResponseDTO payment = paymentService.getPaymentById(paymentId);
-        return ResponseEntity.ok(payment);
-    }
-    @PreAuthorize("hasAnyRole('ADMIN','MANAGER')")
-    @GetMapping("/booking/{bookingId}")
-    public ResponseEntity<PaymentResponseDTO> getPaymentByBooking(@PathVariable String bookingId) {
-        log.info("Fetching payment for booking ID: {}", bookingId);
-        PaymentResponseDTO payment = paymentService.getPaymentByBookingId(bookingId);
-        return ResponseEntity.ok(payment);
-    }
+@Component({
+  selector: 'app-create-payment',
+  standalone: true,
+  imports: [FormsModule, CommonModule],
+  templateUrl: './payment.html',
+  styleUrls: ['./payment.css']
+})
+export class CreatePayment {
+  bookingId!: number;
+  paymentMethod: string = '';
+  message: string = '';
+
+  constructor(private paymentService: PaymentService) {}
+
+  processPayment() {
+    const data = {
+      bookingId: this.bookingId,
+      paymentMethod: this.paymentMethod
+    };
+
+    this.paymentService.processPayment(data).subscribe({
+      next: (res) => {
+        this.message = `✅ Payment Successful! Status: ${res.paymentStatus}`;
+      },
+      error: (err) => {
+        this.message = `❌ Payment Failed: ${err.error?.message || 'Try again'}`;
+      }
+    });
+  }
 }
 
 
+---
 
-package com.cognizant.smarthotelbooking.dto.requestdto;
+📁 File 2: src/app/features/payment/create-payment/payment.html
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.Data;
+<div class="payment-container">
+  <h2>💳 Process Payment</h2>
+
+  <label>Booking ID:</label>
+  <input type="number" [(ngModel)]="bookingId" placeholder="Enter Booking ID" />
+
+  <label>Payment Method:</label>
+  <input type="text" [(ngModel)]="paymentMethod" placeholder="e.g. CARD / UPI" />
+
+  <button (click)="processPayment()">Pay Now</button>
+
+  <p class="message">{{ message }}</p>
+</div>
 
 
+---
 
-@Data
-public class PaymentRequestDTO {
-    @NotNull(message = "Booking Id is required")
-    private Long bookingId;
-    @NotBlank(message = "Payment Method should not be blank")
-    private String paymentMethod;
+📁 File 3: src/app/features/payment/create-payment/payment.css
+
+.payment-container {
+  width: 400px;
+  margin: 50px auto;
+  background: #f8f9fa;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-package com.cognizant.smarthotelbooking.dto.responsedto;
 
-import lombok.Data;
-
-import java.time.LocalDate;
-
-@Data
-public class PaymentResponseDTO {
-    private Long paymentId;
-    private Long bookingId;
-    private Double amount;
-    private LocalDate paymentDate;
-    private String paymentMethod;
-    private String paymentStatus;
+label {
+  font-weight: bold;
+  display: block;
+  margin-top: 10px;
 }
-package com.cognizant.smarthotelbooking.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.cognizant.smarthotelbooking.entity.enums.PaymentStatus;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
-
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Entity
-public class Payment {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "paymentId")
-    private Long paymentId;
-
-    @Column(name = "amount", nullable = false)
-    private Double amount;
-
-    @Column(name = "paymentDate", nullable = false)
-    private LocalDate paymentDate;
-
-    @Column(name = "paymentMethod")
-    private String paymentMethod;
-
-    @Column(name = "paymentStatus", nullable = false)
-    @Enumerated(EnumType.STRING)
-    private PaymentStatus paymentStatus;
-
-    @JsonIgnore
-    @ManyToOne
-    @JoinColumn(name = "userId", nullable = false)
-    private User user;
-
-    @JsonIgnore
-    @OneToOne
-    @JoinColumn(name = "bookingId", nullable = false, referencedColumnName = "bookingId")
-    private Booking booking;
+input {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
 }
-package com.cognizant.smarthotelbooking.repository;
 
-import com.cognizant.smarthotelbooking.entity.Payment;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.stereotype.Repository;
-
-import java.util.List;
-
-@Repository
-public interface PaymentRepository extends JpaRepository<Payment, Long> {
-
-    @Query("SELECT p FROM Payment p JOIN p.user u WHERE u.email = :email")
-    List<Payment> findPaymentsByUserEmail(String email);
-
-    Payment findByBooking_BookingId(Long bookingId);
+button {
+  width: 100%;
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
 }
-package com.cognizant.smarthotelbooking.service.impl;
 
-import com.cognizant.smarthotelbooking.dto.requestdto.PaymentRequestDTO;
-import com.cognizant.smarthotelbooking.dto.responsedto.PaymentResponseDTO;
-import com.cognizant.smarthotelbooking.entity.*;
-import com.cognizant.smarthotelbooking.repository.*;
-import com.cognizant.smarthotelbooking.entity.enums.Action;
-import com.cognizant.smarthotelbooking.entity.enums.BookingStatus;
-import com.cognizant.smarthotelbooking.entity.enums.PaymentStatus;
-import com.cognizant.smarthotelbooking.exception.BookingNotFoundException;
-import com.cognizant.smarthotelbooking.exception.PaymentNotFoundException;
-import com.cognizant.smarthotelbooking.exception.RoomNotFoundException;
-import com.cognizant.smarthotelbooking.service.PaymentService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-
-@Service
-@RequiredArgsConstructor
-public class PaymentServiceImpl implements PaymentService {
-
-    private final PaymentRepository paymentRepository;
-    private final BookingRepository bookingRepository;
-    private final RoomRepository roomRepository;
-    private final LoyaltyAccountRepository loyaltyAccountRepository;
-    private final LoyaltyTransactionRepository loyaltyTransactionRepository;
-
-    @Override
-    public PaymentResponseDTO processPayment(PaymentRequestDTO dto) {
-        Booking booking = bookingRepository.findById(dto.getBookingId())
-                .orElseThrow(() -> new BookingNotFoundException("Booking not found"));
-
-        Room room = roomRepository.findById(booking.getRoomId())
-                .orElseThrow(() -> new RoomNotFoundException("Room not found"));
-
-        Payment payment = paymentRepository.findByBooking_BookingId(dto.getBookingId());
-        if(payment == null) {
-            throw new PaymentNotFoundException("Payment Request Not Found");
-        }
-        payment.setPaymentMethod(dto.getPaymentMethod());
-        payment.setPaymentStatus(PaymentStatus.SUCCESS);
-        booking.setStatus(BookingStatus.CONFIRMED);
-        bookingRepository.save(booking);
-
-
-
-        double price = room.getPrice();
-        LocalDate checkInDate = booking.getCheckInDate();
-        LocalDate checkOutDate = booking.getCheckOutDate();
-        double finalPrice = price * checkInDate.until(checkOutDate, ChronoUnit.DAYS);
-
-        int earnedPoints = (int) (finalPrice / 10);
-        LoyaltyAccount account = loyaltyAccountRepository.findByUser_UserId(booking.getUser().getUserId());
-
-        if (account == null) {
-            account = new LoyaltyAccount();
-            account.setUser(booking.getUser());
-            account.setPointsBalance(earnedPoints);
-            account.setLastUpdated(LocalDateTime.now());
-        } else {
-            account.setPointsBalance(account.getPointsBalance() + earnedPoints);
-            account.setLastUpdated(LocalDateTime.now());
-        }
-
-        loyaltyAccountRepository.save(account);
-
-        LoyaltyTransaction transaction = new LoyaltyTransaction(null, booking.getUser(), Action.EARN,
-                "Earned points from payment", earnedPoints, LocalDateTime.now());
-        loyaltyTransactionRepository.save(transaction);
-
-        return mapToDTO(payment);
-    }
-
-
-    @Override
-    public PaymentResponseDTO getPaymentById(String paymentId) {
-        Payment payment = paymentRepository.findById(Long.parseLong(paymentId))
-                .orElseThrow(() -> new PaymentNotFoundException("Payment not found"));
-        return mapToDTO(payment);
-    }
-
-    @Override
-    public PaymentResponseDTO getPaymentByBookingId(String bookingId) {
-        Long bookingIdLong = Long.parseLong(bookingId);
-        return paymentRepository.findAll().stream()
-                .filter(p -> p.getBooking().getBookingId().equals(bookingIdLong))
-                .findFirst()
-                .map(this::mapToDTO)
-                .orElseThrow(() -> new PaymentNotFoundException("Payment not found for booking"));
-    }
-
-    @Override
-    public List<Payment> getAllPayments() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getPrincipal().toString();
-        List<Payment> payments = paymentRepository.findPaymentsByUserEmail(email);
-
-        if (payments.isEmpty()) {
-            throw new PaymentNotFoundException("No payments found for the current user with email: " + email);
-        }
-
-        return payments;
-    }
-
-    private PaymentResponseDTO mapToDTO(Payment payment) {
-        PaymentResponseDTO dto = new PaymentResponseDTO();
-        dto.setPaymentId(payment.getPaymentId());
-        dto.setBookingId(payment.getBooking().getBookingId());
-        dto.setAmount(payment.getAmount());
-        dto.setPaymentDate(LocalDate.now());
-        dto.setPaymentMethod(payment.getPaymentMethod());
-        dto.setPaymentStatus(payment.getPaymentStatus().name());
-        return dto;
-    }
+button:hover {
+  background: #0056b3;
 }
-package com.cognizant.smarthotelbooking.service;
 
-import com.cognizant.smarthotelbooking.dto.requestdto.PaymentRequestDTO;
-import com.cognizant.smarthotelbooking.dto.responsedto.PaymentResponseDTO;
-import com.cognizant.smarthotelbooking.entity.Payment;
-
-import java.util.List;
-
-public interface PaymentService {
-
-    PaymentResponseDTO processPayment(PaymentRequestDTO paymentRequest);
-
-    PaymentResponseDTO getPaymentById(String paymentId);
-
-    PaymentResponseDTO getPaymentByBookingId(String bookingId);
-
-    List<Payment> getAllPayments();
+.message {
+  margin-top: 15px;
+  font-weight: bold;
+  text-align: center;
 }
+
+
+---
+
+📁 File 4: src/app/services/payment.service.ts
+
+(जर तूझ्याकडे आधीच नसेल तर हे एकदाच तयार कर.)
+
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class PaymentService {
+  private baseUrl = 'http://localhost:8080/api/payments';
+
+  constructor(private http: HttpClient) {}
+
+  processPayment(paymentData: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/process`, paymentData);
+  }
+
+  getAllPayments(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.baseUrl}/get-payments`);
+  }
+
+  getPaymentById(paymentId: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/${paymentId}`);
+  }
+
+  getPaymentByBookingId(bookingId: number): Observable<any> {
+    return this.http.get(`${this.baseUrl}/booking/${bookingId}`);
+  }
+}
+
+
+---
+
+📁 Step 5: Route Add कर app.routes.ts मध्ये
+
+import { Routes } from '@angular/router';
+import { CreatePayment } from './features/payment/create-payment/payment';
+
+export const routes: Routes = [
+  { path: 'create-payment', component: CreatePayment }
+];
+
+
+---
+
+✅ आता run करून पाहा:
+👉 http://localhost:4200/create-payment
+
+तू Booking ID आणि Payment Method टाकशील, “Pay Now” क्लिक केल्यावर API call होईल
+(http://localhost:8080/api/payments/process)
+आणि success / fail message दिसेल.
+
+
+---
+
+पुढचा step देऊ का?
+🔸 म्हणजे get-all-payments (सर्व payments list table मध्ये दाखवायचा component)?
+
