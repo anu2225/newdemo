@@ -1,79 +1,112 @@
-Team Assignment – Sales & Marketing Automation Opportunity
-
-M, Sangavi (Cognizant)
-​
-Yadav, Sarthak Vikramjeet (Cognizant);​+2 others
-​
-​
-​
-Dinesh, Bhavya (Contractor);​
-M R, Kavin (Cognizant)​
-Dear Team,
+package com.cognizant.hams.config;
 
+import com.cognizant.hams.security.CustomUserDetailsService;
+import com.cognizant.hams.security.JwtRequestFilter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-We’ve been entrusted with a high-priority strategic opportunity—a fast-growing B2B SaaS company is seeking a comprehensive sales and marketing automation system. This aligns perfectly with our strengths in Make.com, n8n, AI integrations, and Salesforce.
+import java.util.List;
 
+@Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
+public class WebSecurityConfig {
 
-I will be leading the overall proposal development and client coordination. Please find below the key project details and initial task assignments:
+    private final CustomUserDetailsService customUserDetailsService;
+    private final JwtRequestFilter jwtRequestFilter;
 
- 
+    public WebSecurityConfig(CustomUserDetailsService customUserDetailsService, JwtRequestFilter jwtRequestFilter) {
+        this.customUserDetailsService = customUserDetailsService;
+        this.jwtRequestFilter = jwtRequestFilter;
+    }
 
-Project Scope Overview
+    // Password encoder
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-Client Requirements:
+    // Authentication manager
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
+    }
 
-Lead Sourcing
-AI Enrichment & Qualification
-CRM Integration
-Personalized Outreach
-Technical Focus:
+    // DaoAuthenticationProvider for custom user details
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(customUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return authProvider;
+    }
 
-Platform evaluation: Make.com vs. n8n
-Integration tools: Apollo, Clearbit, Salesforce
-Architecture: High-level flow design with automation logic
- 
+    // Security filter chain
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .cors() // ✅ Enable CORS
+            .and()
+            .csrf().disable() // ✅ Disable CSRF for dev
+            .authorizeHttpRequests(auth -> auth
+                    // Public endpoints
+                    .requestMatchers(
+                            "/api/auth/login",
+                            "/api/auth/register",
+                            "/swagger-ui/**",
+                            "/swagger-ui.html",
+                            "/v3/api-docs/**"
+                    ).permitAll()
 
-Team Deliverables
+                    // Admin endpoints
+                    .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-Phase 1 – Deep Requirements Analysis (Due Today):
+                    // Doctor endpoints
+                    .requestMatchers("/api/doctors/**").hasRole("DOCTOR")
 
-Action: Review the four core client needs.
-Focus: Determine which of their needs are best met by Make.com (due to its complex flow handling) versus a lighter tool like n8n. Draft a proposed high-level architecture diagram.
-Output: A high-level document mapping each requirement to the most suitable platform and third-party tools. Include a draft architecture diagram.
-Phase 2 – Collateral & Content Gathering (Due Tomorrow):
+                    // Patient endpoints
+                    .requestMatchers("/api/patients/**").hasRole("PATIENT")
 
-Action: Compile relevant case studies (2–3) showcasing similar SaaS automation projects.
-Process Outline: Adapt our standard methodology: Discovery → Architecture → Build/Test → Deploy/Train
- 
+                    // Medical record endpoints (only doctors can create)
+                    .requestMatchers("/api/medical-records/**").hasRole("DOCTOR")
 
-Next Steps
+                    // Any other request requires authentication
+                    .anyRequest().authenticated()
+            )
+            .sessionManagement(session -> session
+                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            .authenticationProvider(authenticationProvider())
+            .addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
-Please acknowledge receipt of this assignment.
-Confirm availability for the internal sync on Thursday at 3:00 PM.
-Let’s aim to have the full draft ready for my review by Friday, 5:00 PM.
+        return http.build();
+    }
 
-Thank you all for your involvement and collaboration.
+    // CORS configuration for Angular dev
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of("http://localhost:4200")); // Angular dev server
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowCredentials(true);
 
-
-Best regards,
-Sangavi M
-Team Lead – SmartBridge Solutions
-
- 
-
-
-
-
-
-
-Subject: Acknowledgment of Strategic Automation Project Assignment
-
-Dear Sangavi,
-
-Thank you for sharing the project details and task assignments.
-
-I acknowledge receipt of the assignment and confirm my availability for the internal sync scheduled on Thursday at 3:00 PM. I've started reviewing the client requirements and will ensure the Phase 1 deliverables are completed by today, as outlined.
-
-Looking forward to contributing to this strategic opportunity and collaborating with the team to deliver a robust solution.
-
-Best regards, Anurag Jadhav Tester - SmartBridge Solutions, Coimbatore
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+}
