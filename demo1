@@ -1,3 +1,199 @@
+PS C:\Users\2440835\OneDrive - Cognizant\Documents\Project\ISG25JFA003_SmartHotelBookingSystem> cd .\frontend\
+PS C:\Users\2440835\OneDrive - Cognizant\Documents\Project\ISG25JFA003_SmartHotelBookingSystem\frontend> cd .\SmartHotelBookingSystem\
+PS C:\Users\2440835\OneDrive - Cognizant\Documents\Project\ISG25JFA003_SmartHotelBookingSystem\frontend\SmartHotelBookingSystem> npm start
+
+> smart-hotel-booking-system@0.0.0 start
+> ng serve
+
+Application bundle generation failed. [10.453 seconds] - 2025-10-16T17:06:58.024Z
+
+▲ [WARNING] NG8113: Home is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:41:4:
+      41 │     Home,
+         ╵     ~~~~
+
+
+▲ [WARNING] NG8113: HomeManager is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:42:4:
+      42 │     HomeManager,
+         ╵     ~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: Login is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:43:4:
+      43 │     Login,
+         ╵     ~~~~~
+
+
+▲ [WARNING] NG8113: Register is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:44:4:
+      44 │     Register,
+         ╵     ~~~~~~~~
+
+
+▲ [WARNING] NG8113: WelcomeUser is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:45:4:
+      45 │     WelcomeUser,
+         ╵     ~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: CreateHotel is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:46:4:
+      46 │     CreateHotel,
+         ╵     ~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: GetAllHotelsComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:47:4:
+      47 │     GetAllHotelsComponent,
+         ╵     ~~~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: UpdateHotelComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:48:4:
+      48 │     UpdateHotelComponent,
+         ╵     ~~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: SearchHotelComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:49:4:
+      49 │     SearchHotelComponent,
+         ╵     ~~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: FilterHotelComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:50:4:
+      50 │     FilterHotelComponent,
+         ╵     ~~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: DeleteHotelComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:51:4:
+      51 │     DeleteHotelComponent,
+         ╵     ~~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: GetHotelByIdComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:52:4:
+      52 │     GetHotelByIdComponent,
+         ╵     ~~~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: RoomComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:53:4:
+      53 │     RoomComponent,
+         ╵     ~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: CreateRoomComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:54:4:
+      54 │     CreateRoomComponent,
+         ╵     ~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: GetRoomComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:55:4:
+      55 │     GetRoomComponent,
+         ╵     ~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: UpdateRoomComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:56:4:
+      56 │     UpdateRoomComponent,
+         ╵     ~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: DeleteRoomComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:57:4:
+      57 │     DeleteRoomComponent,
+         ╵     ~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: FilterRoomsComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:58:4:
+      58 │     FilterRoomsComponent,
+         ╵     ~~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: GetRoomsByHotelComponent is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:59:4:
+      59 │     GetRoomsByHotelComponent,
+         ╵     ~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: GetAllPayments is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:61:4:
+      61 │     GetAllPayments,
+         ╵     ~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: GetPaymentById is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:62:4:
+      62 │     GetPaymentById,
+         ╵     ~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: GetPaymentByBooking is not used within the template of App [plugin angular-compiler]
+
+    src/app/app.ts:63:4:
+      63 │     GetPaymentByBooking,
+         ╵     ~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: SearchHotelComponent is not used within the template of Home [plugin angular-compiler]
+
+    src/app/features/home/home/home.ts:21:25:
+      21 │   imports: [CommonModule,SearchHotelComponent,GetAllHotelsComponent,
+         ╵                          ~~~~~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: NgOptimizedImage is not used within the template of GetAllHotelsComponent [plugin angular-compiler]
+
+    src/app/features/hotel/get-all-hotels/hotel.ts:30:4:
+      30 │     NgOptimizedImage,
+         ╵     ~~~~~~~~~~~~~~~~
+
+
+▲ [WARNING] NG8113: RouterOutlet is not used within the template of Navbar [plugin angular-compiler]
+
+    src/app/shared/components/navbar/navbar.ts:15:59:
+      15 │ ...arModule, MatButtonModule,RouterOutlet,RouterModule,MatIconModu...
+         ╵                              ~~~~~~~~~~~~
+
+
+X [ERROR] TS2307: Cannot find module 'jwt-decode' or its corresponding type declarations. [plugin angular-compiler]
+
+    src/app/core/services/authService.ts:6:26:
+      6 │ import { jwtDecode } from 'jwt-decode';
+        ╵                           ~~~~~~~~~~~~
+
+
+Watch mode enabled. Watching for file changes...
+
+
+
+
 ठीक आहे! आता Get Payment by Booking ID component बनवू. पूर्ण Angular standalone component + HTML + CSS style.
 
 
