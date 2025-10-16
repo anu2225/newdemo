@@ -1,3 +1,149 @@
+ठीक आहे! आता Get Payment by Booking ID component बनवू. पूर्ण Angular standalone component + HTML + CSS style.
+
+
+---
+
+1️⃣ get-payment-by-booking.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-get-payment-by-booking',
+  standalone: true,
+  imports: [CommonModule, HttpClientModule, FormsModule],
+  templateUrl: './get-payment-by-booking.html',
+  styleUrls: ['./get-payment-by-booking.css']
+})
+export class GetPaymentByBooking {
+  bookingId: string = '';
+  payment: any = null;
+  errorMessage = '';
+  loading = false;
+
+  constructor(private http: HttpClient) {}
+
+  getPayment() {
+    if (!this.bookingId) {
+      this.errorMessage = 'Please enter a Booking ID';
+      return;
+    }
+    this.loading = true;
+    this.payment = null;
+    this.errorMessage = '';
+
+    this.http.get(`http://localhost:8080/api/payments/booking/${this.bookingId}`)
+      .subscribe({
+        next: (res) => {
+          this.payment = res;
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error(err);
+          this.errorMessage = 'Payment not found for this booking';
+          this.loading = false;
+        }
+      });
+  }
+}
+
+
+---
+
+2️⃣ get-payment-by-booking.html
+
+<div class="container">
+  <h2>Get Payment by Booking ID</h2>
+
+  <div class="form-group">
+    <input type="text" [(ngModel)]="bookingId" placeholder="Enter Booking ID" />
+    <button (click)="getPayment()">Get Payment</button>
+  </div>
+
+  <div *ngIf="loading">Loading...</div>
+  <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+  <div *ngIf="payment">
+    <h3>Payment Details</h3>
+    <table>
+      <tr>
+        <th>Payment ID</th>
+        <td>{{ payment.paymentId }}</td>
+      </tr>
+      <tr>
+        <th>Booking ID</th>
+        <td>{{ payment.bookingId }}</td>
+      </tr>
+      <tr>
+        <th>Amount</th>
+        <td>{{ payment.amount }}</td>
+      </tr>
+      <tr>
+        <th>Payment Method</th>
+        <td>{{ payment.paymentMethod }}</td>
+      </tr>
+      <tr>
+        <th>Payment Status</th>
+        <td>{{ payment.paymentStatus }}</td>
+      </tr>
+      <tr>
+        <th>Payment Date</th>
+        <td>{{ payment.paymentDate }}</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+
+---
+
+3️⃣ get-payment-by-booking.css
+
+.container { max-width: 700px; margin: auto; }
+h2 { text-align: center; margin-bottom: 20px; }
+.form-group { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+input { padding: 6px; width: 200px; }
+button { padding: 6px 12px; cursor: pointer; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+th { background-color: #f0f0f0; }
+.error { color: red; text-align: center; margin-top: 10px; }
+
+
+---
+
+4️⃣ app.routes.ts मध्ये route
+
+import { GetPaymentByBooking } from './features/payment/get-payment-by-booking/get-payment-by-booking';
+
+export const routes: Routes = [
+  // ...other routes
+  { path: 'get-payment-by-booking', component: GetPaymentByBooking },
+];
+
+
+---
+
+✅ आता /get-payment-by-booking URL वर जाऊन एखाद्या Booking ID टाकल्यावर त्या booking साठीची payment details table मध्ये दिसेल.
+
+तुम्हाला हवे असल्यास मी Create Payment component सुद्धा तयार करून देऊ शकतो, ज्यामध्ये user booking select करून payment करेल.
+
+तुम्ही त्यासाठी तयार आहात का?
+
+
+
+
+
+
+
+
+
+
+
+
+
 ठीक आहे! आता Get Payment by ID component तयार करू, standalone style, Angular-ready.
 
 
