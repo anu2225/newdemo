@@ -1,3 +1,356 @@
+
+
+
+
+
+Absolutely 🔥 इथे तुला पूर्ण Payment Module Angular setup दिलं आहे —
+सगळे standalone components (Create, Get All, Get By ID, Get By Booking)
+
+सुंदर card-style UI (जसं तू फोटोमध्ये दाखवलं आहे).
+हे तू src/features/payment/ मध्ये टाकलं की direct चालेल 🚀
+
+
+
+---
+
+💳 PAYMENT MODULE — COMPLETE SETUP
+
+📁 Folder Structure
+
+features/payment/
+├── create-payment/
+│   ├── payment.ts
+│   ├── payment.html
+│   └── payment.css
+├── get-all-payments/
+│   ├── payment.ts
+│   ├── payment.html
+│   └── payment.css
+├── get-payment-by-id/
+│   ├── payment.ts
+│   ├── payment.html
+│   └── payment.css
+├── get-payment-by-booking/
+│   ├── payment.ts
+│   ├── payment.html
+│   └── payment.css
+
+
+---
+
+🧩 1️⃣ Create Payment
+
+create-payment/payment.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-create-payment',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
+  templateUrl: './payment.html',
+  styleUrls: ['./payment.css']
+})
+export class CreatePayment {
+  paymentForm: FormGroup;
+
+  constructor(private fb: FormBuilder, private http: HttpClient, private router: Router) {
+    this.paymentForm = this.fb.group({
+      bookingId: ['', Validators.required],
+      amount: ['', Validators.required],
+      paymentMethod: ['', Validators.required]
+    });
+  }
+
+  submitPayment() {
+    if (this.paymentForm.valid) {
+      this.http.post('http://localhost:8080/api/payments/process', this.paymentForm.value)
+        .subscribe({
+          next: () => {
+            alert('✅ Payment Successful!');
+            this.router.navigate(['/get-all-payments']);
+          },
+          error: () => alert('❌ Payment Failed!')
+        });
+    } else {
+      alert('⚠️ Please fill all fields!');
+    }
+  }
+}
+
+create-payment/payment.html
+
+<h2>Create Payment</h2>
+<form [formGroup]="paymentForm" (ngSubmit)="submitPayment()">
+  <label>Booking ID:</label>
+  <input type="number" placeholder="Enter Booking ID" formControlName="bookingId" />
+
+  <label>Amount:</label>
+  <input type="number" placeholder="Enter Amount" formControlName="amount" />
+
+  <label>Payment Method:</label>
+  <input type="text" placeholder="e.g. UPI, Card, Cash" formControlName="paymentMethod" />
+
+  <button type="submit">Pay Now</button>
+</form>
+
+
+---
+
+🧾 2️⃣ Get All Payments
+
+get-all-payments/payment.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-get-all-payments',
+  standalone: true,
+  imports: [CommonModule, HttpClientModule],
+  templateUrl: './payment.html',
+  styleUrls: ['./payment.css']
+})
+export class GetAllPayments {
+  payments: any[] = [];
+
+  constructor(private http: HttpClient) {
+    this.http.get<any[]>('http://localhost:8080/api/payments/get-payments')
+      .subscribe({
+        next: res => this.payments = res,
+        error: err => alert('❌ Failed to load payments')
+      });
+  }
+}
+
+get-all-payments/payment.html
+
+<h2>All Payments</h2>
+<table border="1" width="80%" style="margin:auto;">
+  <tr>
+    <th>Payment ID</th>
+    <th>Booking ID</th>
+    <th>Amount</th>
+    <th>Method</th>
+    <th>Status</th>
+  </tr>
+  <tr *ngFor="let p of payments">
+    <td>{{p.paymentId}}</td>
+    <td>{{p.bookingId}}</td>
+    <td>{{p.amount}}</td>
+    <td>{{p.paymentMethod}}</td>
+    <td>{{p.paymentStatus}}</td>
+  </tr>
+</table>
+
+
+---
+
+🔍 3️⃣ Get Payment By ID
+
+get-payment-by-id/payment.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-get-payment-by-id',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
+  templateUrl: './payment.html',
+  styleUrls: ['./payment.css']
+})
+export class GetPaymentById {
+  form: FormGroup;
+  payment: any = null;
+
+  constructor(private fb: FormBuilder, private http: HttpClient) {
+    this.form = this.fb.group({
+      paymentId: ['', Validators.required]
+    });
+  }
+
+  fetchPayment() {
+    if (this.form.valid) {
+      this.http.get(`http://localhost:8080/api/payments/${this.form.value.paymentId}`)
+        .subscribe({
+          next: res => this.payment = res,
+          error: () => alert('❌ Payment not found')
+        });
+    }
+  }
+}
+
+get-payment-by-id/payment.html
+
+<h2>Get Payment By ID</h2>
+<form [formGroup]="form" (ngSubmit)="fetchPayment()">
+  <label>Payment ID:</label>
+  <input type="number" placeholder="Enter Payment ID" formControlName="paymentId" />
+  <button type="submit">Fetch Payment</button>
+</form>
+
+<div *ngIf="payment">
+  <p><b>Payment ID:</b> {{payment.paymentId}}</p>
+  <p><b>Booking ID:</b> {{payment.bookingId}}</p>
+  <p><b>Amount:</b> {{payment.amount}}</p>
+  <p><b>Method:</b> {{payment.paymentMethod}}</p>
+  <p><b>Status:</b> {{payment.paymentStatus}}</p>
+</div>
+
+
+---
+
+🧾 4️⃣ Get Payment By Booking ID
+
+get-payment-by-booking/payment.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-get-payment-by-booking',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, HttpClientModule],
+  templateUrl: './payment.html',
+  styleUrls: ['./payment.css']
+})
+export class GetPaymentByBooking {
+  form: FormGroup;
+  payment: any = null;
+
+  constructor(private fb: FormBuilder, private http: HttpClient) {
+    this.form = this.fb.group({
+      bookingId: ['', Validators.required]
+    });
+  }
+
+  fetchPayment() {
+    if (this.form.valid) {
+      this.http.get(`http://localhost:8080/api/payments/booking/${this.form.value.bookingId}`)
+        .subscribe({
+          next: res => this.payment = res,
+          error: () => alert('❌ Payment not found for booking')
+        });
+    }
+  }
+}
+
+get-payment-by-booking/payment.html
+
+<h2>Get Payment By Booking ID</h2>
+<form [formGroup]="form" (ngSubmit)="fetchPayment()">
+  <label>Booking ID:</label>
+  <input type="number" placeholder="Enter Booking ID" formControlName="bookingId" />
+  <button type="submit">Fetch Payment</button>
+</form>
+
+<div *ngIf="payment">
+  <p><b>Payment ID:</b> {{payment.paymentId}}</p>
+  <p><b>Booking ID:</b> {{payment.bookingId}}</p>
+  <p><b>Amount:</b> {{payment.amount}}</p>
+  <p><b>Method:</b> {{payment.paymentMethod}}</p>
+  <p><b>Status:</b> {{payment.paymentStatus}}</p>
+</div>
+
+
+---
+
+🎨 Common CSS for All Forms
+
+> प्रत्येक folder मधील payment.css मध्ये हेच style ठेवा 👇
+
+
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f5f7fa;
+}
+
+h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+form {
+  max-width: 400px;
+  margin: 60px auto;
+  padding: 30px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #555;
+}
+
+input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+div {
+  max-width: 400px;
+  margin: 20px auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+
+---
+
+✅ हे पूर्ण झालं की आता पुढचा step म्हणजे navigation setup
+(App.ts + App.html + Routes.ts) —
+त्यात header menu असेल:
+Home | Create Payment | All Payments | Payment by ID | Payment by Booking
+
+हवंय का मी आता तो full navigation setup देऊ?
+
+
+
+
+
+
+
+
+
+
+
 PS C:\Users\2440835\OneDrive - Cognizant\Documents\Project\ISG25JFA003_SmartHotelBookingSystem> cd .\frontend\
 
 
