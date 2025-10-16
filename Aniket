@@ -1,3 +1,139 @@
+अरे ठीक आहे! आता get-all-payments component तयार करतो, standalone style मध्ये, ready-to-run Angular setup.
+
+
+---
+
+1️⃣ get-all-payments.ts
+
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+
+@Component({
+  selector: 'app-get-all-payments',
+  standalone: true,
+  imports: [CommonModule, HttpClientModule],
+  templateUrl: './get-all-payments.html',
+  styleUrls: ['./get-all-payments.css']
+})
+export class GetAllPayments implements OnInit {
+  payments: any[] = [];
+  loading = true;
+  errorMessage = '';
+
+  constructor(private http: HttpClient) {}
+
+  ngOnInit() {
+    this.http.get<any[]>('http://localhost:8080/api/payments/get-payments')
+      .subscribe({
+        next: (res) => {
+          this.payments = res;
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error(err);
+          this.errorMessage = 'Failed to fetch payments';
+          this.loading = false;
+        }
+      });
+  }
+}
+
+
+---
+
+2️⃣ get-all-payments.html
+
+<div class="container">
+  <h2>All Payments</h2>
+
+  <div *ngIf="loading">Loading payments...</div>
+  <div *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <table *ngIf="!loading && payments.length">
+    <thead>
+      <tr>
+        <th>Payment ID</th>
+        <th>Booking ID</th>
+        <th>Amount</th>
+        <th>Payment Method</th>
+        <th>Payment Status</th>
+        <th>Payment Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let payment of payments">
+        <td>{{ payment.paymentId }}</td>
+        <td>{{ payment.bookingId }}</td>
+        <td>{{ payment.amount }}</td>
+        <td>{{ payment.paymentMethod }}</td>
+        <td>{{ payment.paymentStatus }}</td>
+        <td>{{ payment.paymentDate }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!loading && payments.length === 0">No payments found.</div>
+</div>
+
+
+---
+
+3️⃣ get-all-payments.css
+
+.container { max-width: 900px; margin: auto; }
+h2 { text-align: center; margin-bottom: 20px; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+th { background-color: #f0f0f0; }
+
+
+---
+
+4️⃣ app.routes.ts मध्ये route
+
+import { GetAllPayments } from './features/payment/get-all-payments/get-all-payments';
+
+export const routes: Routes = [
+  // ...other routes
+  { path: 'get-all-payments', component: GetAllPayments },
+];
+
+
+---
+
+💡 आता /get-all-payments URL वर जाऊन सर्व payments fetch होतील आणि table मध्ये दिसतील.
+
+तुम्हाला हवं असल्यास मी पुढचं तयार करू शकतो:
+
+Get payment by ID
+
+Get payment by booking ID
+
+
+हे दोन्ही पण standalone + HTML + CSS style मध्ये ready-to-run.
+
+तुम्ही तयार आहात का ते पुढे करण्यासाठी?
+
+
+
+
+
+
+
+
+
+
+
+
 
 Perfect! आपण आता पूर्ण payment module + standalone App + routes + main.ts setup करू, जे NG04002 error नाही देणार. मी तुला ready-to-run Angular 17+ standalone setup देतो.
 
