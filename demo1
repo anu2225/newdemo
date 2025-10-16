@@ -1,3 +1,155 @@
+ठीक आहे! आता Get Payment by ID component तयार करू, standalone style, Angular-ready.
+
+
+---
+
+1️⃣ get-payment-by-id.ts
+
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-get-payment-by-id',
+  standalone: true,
+  imports: [CommonModule, HttpClientModule, FormsModule],
+  templateUrl: './get-payment-by-id.html',
+  styleUrls: ['./get-payment-by-id.css']
+})
+export class GetPaymentById {
+  paymentId: string = '';
+  payment: any = null;
+  errorMessage = '';
+  loading = false;
+
+  constructor(private http: HttpClient) {}
+
+  getPayment() {
+    if (!this.paymentId) {
+      this.errorMessage = 'Please enter a Payment ID';
+      return;
+    }
+    this.loading = true;
+    this.payment = null;
+    this.errorMessage = '';
+
+    this.http.get(`http://localhost:8080/api/payments/${this.paymentId}`)
+      .subscribe({
+        next: (res) => {
+          this.payment = res;
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error(err);
+          this.errorMessage = 'Payment not found';
+          this.loading = false;
+        }
+      });
+  }
+}
+
+
+---
+
+2️⃣ get-payment-by-id.html
+
+<div class="container">
+  <h2>Get Payment by ID</h2>
+
+  <div class="form-group">
+    <input type="text" [(ngModel)]="paymentId" placeholder="Enter Payment ID" />
+    <button (click)="getPayment()">Get Payment</button>
+  </div>
+
+  <div *ngIf="loading">Loading...</div>
+  <div *ngIf="errorMessage" class="error">{{ errorMessage }}</div>
+
+  <div *ngIf="payment">
+    <h3>Payment Details</h3>
+    <table>
+      <tr>
+        <th>Payment ID</th>
+        <td>{{ payment.paymentId }}</td>
+      </tr>
+      <tr>
+        <th>Booking ID</th>
+        <td>{{ payment.bookingId }}</td>
+      </tr>
+      <tr>
+        <th>Amount</th>
+        <td>{{ payment.amount }}</td>
+      </tr>
+      <tr>
+        <th>Payment Method</th>
+        <td>{{ payment.paymentMethod }}</td>
+      </tr>
+      <tr>
+        <th>Payment Status</th>
+        <td>{{ payment.paymentStatus }}</td>
+      </tr>
+      <tr>
+        <th>Payment Date</th>
+        <td>{{ payment.paymentDate }}</td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+
+---
+
+3️⃣ get-payment-by-id.css
+
+.container { max-width: 700px; margin: auto; }
+h2 { text-align: center; margin-bottom: 20px; }
+.form-group { display: flex; gap: 10px; justify-content: center; margin-bottom: 20px; }
+input { padding: 6px; width: 200px; }
+button { padding: 6px 12px; cursor: pointer; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+th { background-color: #f0f0f0; }
+.error { color: red; text-align: center; margin-top: 10px; }
+
+
+---
+
+4️⃣ app.routes.ts मध्ये route
+
+import { GetPaymentById } from './features/payment/get-payment-by-id/get-payment-by-id';
+
+export const routes: Routes = [
+  // ...other routes
+  { path: 'get-payment-by-id', component: GetPaymentById },
+];
+
+
+---
+
+💡 आता /get-payment-by-id URL वर जाऊन एखाद्या payment ID टाकल्यावर त्या payment ची details table मध्ये दिसेल.
+
+तुम्ही हवे असल्यास मी पुढचे तयार करू शकतो:
+
+Get Payment by Booking ID
+
+Create Payment
+
+
+हे दोन्ही सुद्धा standalone + HTML + CSS style मध्ये तयार.
+
+तुम्ही पुढे करू इच्छिता का?
+
+
+
+
+
+
+
+
+
+
+
+
 Perfect bro 😎 — tu print karaycha text pahije na, tar he sagla ready-to-use, clean format madhe deun dila:
 
 
